@@ -16,9 +16,9 @@ RUN python -m venv /django_venv && \
     apt-get install -y postgresql-client && \
     apt-get install -y libpq-dev && \
     apt-get install -y build-essential && \
-    pip install "psycopg[c]" && \
     pip install --upgrade pip && \
     pip install --no-cache-dir -r req.txt && \
+    pip install "psycopg[c]" && \
     mkdir -p /vol/web/media && \
     mkdir -p /vol/web/static && \
     chmod +x /app/run_uwsgi.sh
