@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
+from django.shortcuts import redirect
 from django.views.generic import TemplateView
 from django.views.generic.edit import UpdateView
 
@@ -22,6 +23,9 @@ class GetBotView(LoginRequiredMixin, TemplateView):
 
     def dispatch(self, request, *args, **kwargs):
         user = request.user
+
+        if not request.user.is_authenticated:
+            return redirect('admin:login')
 
         if not user.uniq_code and not user.chat_id:
             uniq_code = str(uuid.uuid4())
