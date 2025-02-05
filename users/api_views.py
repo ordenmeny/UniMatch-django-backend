@@ -4,12 +4,17 @@ from .serializers import *
 from rest_framework.permissions import IsAdminUser
 
 
-class GetUserAPIView(RetrieveUpdateDestroyAPIView):
+class SetUserBotAPIView(RetrieveUpdateDestroyAPIView):
     queryset = get_user_model().objects.all()
     serializer_class = UserSerializer
-    # permission_classes = [IsAdminUser]
-
-    # lookup_field указывает, по какому полю модели будет производиться поиск объекта.
     lookup_field = 'uniq_code'
-    # lookup_url_kwarg указывает на поле из url, по которому будет вестись поиск.
     lookup_url_kwarg = 'uniq_code'
+
+
+class GetUserAPIView(RetrieveAPIView):
+    queryset = get_user_model().objects.all()
+    serializer_class = UserSerializer
+    lookup_field = 'chat_id'
+    lookup_url_kwarg = 'chat_id'
+    permission_classes = [IsAdminUser]
+
