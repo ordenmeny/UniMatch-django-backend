@@ -33,6 +33,11 @@ class GetBotView(LoginRequiredMixin, TemplateView):
         if not request.user.is_authenticated:
             return redirect('admin:login')
 
+        # Если у пользователя нет uniq_code или нет chat_id:
+        # у пользователя генерируем uniq_code
+        # и передаем в контекст для создания ссылки на тг-бот.
+        # Если есть uniq_code, но нет chat_id,
+        # то передаем в контекст uniq_code.
         if not user.uniq_code and not user.chat_id:
             uniq_code = str(uuid.uuid4())
             self.uniq_code = uniq_code
@@ -52,14 +57,21 @@ class SignUpView(CreateView):
     success_url = reverse_lazy('users:get_bot')
 
     def form_valid(self, form):
-        # save the new user first
-        form.save()
+        # Создаем объект пользователя, но пока не сохраняем в БД
+        user = form.save(commit=False)
 
-        # get the username and password
-        username = self.request.POST['username']
-        password = self.request.POST['password1']
+        # Генерируем и присваиваем уникальный код
+        uniq_code = str(uuid.uuid4())
+        user.uniq_code = uniq_code
+        # self.uniq_code = uniq_code
 
-        # authenticate user then login
-        user = authenticate(username=username, password=password)
-        login(self.request, user)
-        return redirect(self.success_url)
+        # Сохраняем пользователя в БД
+        user.save()
+
+        # Аутентифицируем пользователя
+        authenticated_user = authenticate(username=user.username, password=self.request.POST['password1'])
+
+        if authenticated_user:
+            login(self.request, authenticated_user)
+
+        return redirect(f"https://t.me/Uni_Match_Bot?start={uniq_code}")

@@ -7,8 +7,13 @@
 <body>
 
     <div>
-        <p>Перейти в тг-бот:
-          <a href="https://t.me/Uni_Match_Bot?start={{uniq_code}}" target="_blank">Бот</a></p>
+            {% if not request.user.chat_id %}
+                <p>Перейти в тг-бот:
+                    <a href="https://t.me/Uni_Match_Bot?start={{uniq_code}}" target="_blank">Бот</a>
+                </p>
+            {% else %}
+                <p>Пусто...</p>
+            {% endif %}
     </div>
 
 <h3>{{ request.user }}</h3>
