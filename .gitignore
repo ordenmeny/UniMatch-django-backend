@@ -140,3 +140,9 @@ GitHub.sublime-settings
 
 .DS_Store
 .idea
+
+# Django migrations
+*/migrations/*
+!*/migrations/__init__.py
+
+.vscode/

@@ -2,14 +2,14 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.admin import UserAdmin
-
+from .models import HobbyModel
 
 class CustomUserAdmin(UserAdmin):
     list_display = ('username', 'email', 'uniq_code', 'chat_id')
     list_display_links = ('username', 'email')
     list_editable = ('uniq_code', 'chat_id')
 
-    fields_to_set = ("first_name", "last_name", "email", "age", "university", "uniq_code", "image")
+    fields_to_set = ("first_name", "last_name", "email", "age", "university", "uniq_code", "image", "hobby")
     fieldsets = (
         (None, {"fields": ("username", "password")}),
         (_("Personal info"), {"fields": fields_to_set}),
@@ -30,3 +30,4 @@ class CustomUserAdmin(UserAdmin):
 
 
 admin.site.register(get_user_model(), CustomUserAdmin)
+admin.site.register(HobbyModel)
