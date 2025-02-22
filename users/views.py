@@ -10,9 +10,22 @@ import uuid
 from .forms import *
 
 
+
+
 class CustomLoginView(LoginView):
     template_name = 'users/login.html'
     success_url = reverse_lazy('users:get_bot')
+
+    def get_context_data(self, **kwargs):
+        kwargs = super().get_context_data(**kwargs)
+        kwargs['uniq_code'] = str(uuid.uuid4())
+
+        # Сохраняем uniq_code в сессии браузера.
+        self.request.session['uniq_code'] = uniq_code
+
+        # print(self.request.session['uniq_code']) # из сессии браузера.
+
+        return kwargs
 
     def get_success_url(self):
         return self.success_url
@@ -74,4 +87,5 @@ class SignUpView(CreateView):
         if authenticated_user:
             login(self.request, authenticated_user)
 
-        return redirect(f"https://t.me/Uni_Match_Bot?start={uniq_code}")
+        # return redirect(f"https://t.me/Uni_Match_Bot?start={uniq_code}")
+        return redirect(reverse_lazy('users:get_bot'))

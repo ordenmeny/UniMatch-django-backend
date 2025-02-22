@@ -10,14 +10,19 @@
 <br><br>
 
     <form class="container" method="post">
-<p style="font-size: 5px" class="container">{{ user }}</p>
+<p style="font-size: 15px">Вы уже вошли под логином: {{ user }}</p>
 
-    <h1>Войти</h1>
+    <h1>Войти через логин или почту:</h1>
     {% csrf_token %}
     {{ form.as_p }}
     <input type="submit" value="Войти">
     </form>
-
+    <br><br><br>
+    <div class="container">
+        <h1>Войти через телеграм:</h1>
+        <a href="https://t.me/Uni_Match_Bot?start=login_{{uniq_code}}" target="_blank" class="btn btn-secondary">Войти</a>
+    </div>
+    
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
