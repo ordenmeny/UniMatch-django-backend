@@ -9,10 +9,12 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
+        # Метод, который срабатывает при регистрации пользователя
+
         password = validated_data.pop('password')  # Извлекаем пароль
         user = super().create(validated_data)  # Создаем пользователя
         user.set_password(password)  # Хешируем пароль
         user.save()  # Сохраняем пользователя с хешированным паролем
-        
+
         return user
 

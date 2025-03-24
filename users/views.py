@@ -1,91 +1,76 @@
-from django.contrib.auth import get_user_model, authenticate, login
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.views import LoginView, LogoutView
-from django.http import HttpResponseRedirect
-from django.shortcuts import redirect
-from django.urls import reverse_lazy
-from django.views.generic import TemplateView
-from django.views.generic.edit import UpdateView, CreateView
+from django.contrib.auth import get_user_model
+from rest_framework.generics import RetrieveAPIView, DestroyAPIView, UpdateAPIView, RetrieveUpdateDestroyAPIView, \
+    CreateAPIView
+from .serializers import *
+from rest_framework.permissions import IsAdminUser
+from rest_framework.views import APIView
 import uuid
-from .forms import *
+from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import NotFound
+from rest_framework import status
 
 
-
-
-class CustomLoginView(LoginView):
-    template_name = 'users/login.html'
-    success_url = reverse_lazy('users:get_bot')
-
-    def get_context_data(self, **kwargs):
-        kwargs = super().get_context_data(**kwargs)
-        kwargs['uniq_code'] = str(uuid.uuid4())
-
-        # Сохраняем uniq_code в сессии браузера.
-        self.request.session['uniq_code'] = uniq_code
-
-        # print(self.request.session['uniq_code']) # из сессии браузера.
-
-        return kwargs
-
-    def get_success_url(self):
-        return self.success_url
-
-
-class GetBotView(LoginRequiredMixin, TemplateView):
-    template_name = 'users/get_bot.html'
-
-    def get_context_data(self, **kwargs):
-        kwargs = super().get_context_data(**kwargs)
-        kwargs['uniq_code'] = self.uniq_code
-
-        return kwargs
-
-    def dispatch(self, request, *args, **kwargs):
-        user = request.user
-
-        if not request.user.is_authenticated:
-            return redirect('admin:login')
-
-        # Если у пользователя нет uniq_code или нет chat_id:
-        # у пользователя генерируем uniq_code
-        # и передаем в контекст для создания ссылки на тг-бот.
-        # Если есть uniq_code, но нет chat_id,
-        # то передаем в контекст uniq_code.
-        if not user.uniq_code and not user.chat_id:
-            uniq_code = str(uuid.uuid4())
-            self.uniq_code = uniq_code
-
-            user.uniq_code = uniq_code
-            user.save()
-        else:
-            self.uniq_code = user.uniq_code
-
-        return super().dispatch(request, *args, **kwargs)
-
-
-class SignUpView(CreateView):
-    model = get_user_model()
-    form_class = CustomUserCreationForm
-    template_name = "users/signup.html"
-    success_url = reverse_lazy('users:get_bot')
-
-    def form_valid(self, form):
-        # Создаем объект пользователя, но пока не сохраняем в БД
-        user = form.save(commit=False)
-
-        # Генерируем и присваиваем уникальный код
+class GenerateUniqCodeAPIView(APIView):
+    def get(self, request):
         uniq_code = str(uuid.uuid4())
-        user.uniq_code = uniq_code
-        # self.uniq_code = uniq_code
 
-        # Сохраняем пользователя в БД
+        return Response({'uniq_code': uniq_code})
+
+
+class UserByUniqCodeAPIView(RetrieveUpdateDestroyAPIView):
+    queryset = get_user_model().objects.all()
+    serializer_class = UserSerializer
+    lookup_field = 'uniq_code'
+    lookup_url_kwarg = 'uniq_code'
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        token, created = Token.objects.get_or_create(user=instance)
+
+        serializer = self.get_serializer(instance)
+
+        return Response({
+            "user": serializer.data,
+            "token": token.key
+        })
+
+
+class UserByChatIDAPIView(RetrieveAPIView):
+    queryset = get_user_model().objects.all()
+    serializer_class = UserSerializer
+    lookup_field = 'chat_id'
+    lookup_url_kwarg = 'chat_id'
+    permission_classes = [IsAdminUser]
+
+
+class RegisterUserAPIView(CreateAPIView):
+    queryset = get_user_model().objects.all()
+    serializer_class = UserSerializer
+
+    def create(self, request, *args, **kwargs):
+        # Метод для регистрации пользователя через API (POST-запрос).
+        # В БД сохраняется только uniq_code и введенные данные пользователя.
+        # Создается токен для нового пользователя.
+        # Возвращаются данные пользователя, токен, uniq_code.
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        user.is_active = True
         user.save()
 
-        # Аутентифицируем пользователя
-        authenticated_user = authenticate(username=user.username, password=self.request.POST['password1'])
+        uniq_code = str(uuid.uuid4())
+        user.uniq_code = uniq_code
+        user.save()
 
-        if authenticated_user:
-            login(self.request, authenticated_user)
+        # Создаем токен для нового пользователя
+        token, created = Token.objects.get_or_create(user=user)
 
-        # return redirect(f"https://t.me/Uni_Match_Bot?start={uniq_code}")
-        return redirect(reverse_lazy('users:get_bot'))
+        # Возвращаем данные пользователя и токен
+        return Response({
+            'user': UserSerializer(user).data,
+            'token': token.key,
+            'uniq_code': uniq_code
+        }, status=status.HTTP_201_CREATED)
