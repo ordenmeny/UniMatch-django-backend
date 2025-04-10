@@ -33,5 +33,9 @@ class CustomUserAdmin(UserAdmin):
 admin.site.register(get_user_model(), CustomUserAdmin)
 admin.site.register(HobbyModel)
 
-admin.site.register(HistoryPairsModel)
-admin.site.register(CurrentPairsModel)
+class PairsModelAdmin(admin.ModelAdmin):
+    list_display = ('user1', 'user2', 'user3', 'is_archived')
+    list_display_links = ('user1', 'user2', 'user3', 'is_archived')
+
+admin.site.register(PairsModel, PairsModelAdmin)
+# admin.site.register(CurrentPairsModel)

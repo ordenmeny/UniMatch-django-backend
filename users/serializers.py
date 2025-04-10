@@ -18,3 +18,8 @@ class UserSerializer(serializers.ModelSerializer):
 
         return user
 
+class PairsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = "__all__"
+

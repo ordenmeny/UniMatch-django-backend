@@ -112,13 +112,13 @@ def generate_weekly_pairs(users: List, past_pairs: Set[FrozenSet]) -> List[Union
 
 
 # История прошлых пар (пусть Alice и Bob уже были в паре)
-all_users = CustomUser.objects.all()
-history_pairs = [(i.user1, i.user2) for i in HistoryPairsModel.objects.all()]
-past_pairs = {frozenset(history_pairs)}
+# all_users = CustomUser.objects.all()
+# history_pairs = [(i.user1, i.user2) for i in PairsModel.objects.filter(is_archived=True)]
+# past_pairs = {frozenset(history_pairs)}
 # На вход функции подается список из пользователей.
 # Получаем пары.
 
 
-pairs = generate_weekly_pairs(all_users, past_pairs)
-for p in pairs:
-    print(p)
+# pairs = generate_weekly_pairs(all_users, past_pairs)
+# for p in pairs:
+#     print(p)

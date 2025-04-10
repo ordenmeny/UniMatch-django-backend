@@ -13,6 +13,7 @@ from django.views.generic import TemplateView, ListView
 from .models import *
 from users.utils.generate_pairs import generate_weekly_pairs
 
+
 class GenerateUniqCodeAPIView(APIView):
     def get(self, request):
         uniq_code = str(uuid.uuid4())
@@ -81,12 +82,48 @@ class RegisterUserAPIView(CreateAPIView):
 class ConfirmPairsView(TemplateView):
     template_name = 'users/pairs.html'
 
-    def get_context_data(self, *, object_list = ..., **kwargs):
+    def get_context_data(self, *, object_list=..., **kwargs):
         context = super().get_context_data(**kwargs)
-        context['users'] = CurrentPairsModel.objects.all()
-        print(context['users'])
+        context['users'] = PairsModel.objects.all()
         return context
 
-class GeneratePairsAPIView(CreateAPIView):
-    pass
 
+class GeneratePairsAPIView(CreateAPIView):
+    serializer_class = PairsSerializer
+
+    def post(self, request, *args, **kwargs):
+        all_pairs = PairsModel.objects.all()
+
+        # Поочередно изменяем у всех объектов на is_archived=True
+        PairsModel.objects.all().update(is_archived=True)
+
+        # Генерируем пары. Получаем список из пар (pairs).
+        # Генерируем пары. Получаем список из пар (pairs).
+        all_users = CustomUser.objects.all()
+        past_pairs = {frozenset([(i.user1, i.user2, i.user3) for i in PairsModel.objects.filter(is_archived=True)])}
+        pairs = generate_weekly_pairs(all_users, past_pairs)
+        print(pairs)
+
+        # Поочередно через цикл добавляем пары в БД (модель PairsModel) is_archived=False.
+        for i in pairs:
+            if len(i) == 2:
+                PairsModel.objects.create(user1=i[0], user2=i[1], is_archived=False)
+            elif len(i) == 3:
+                PairsModel.objects.create(user1=i[0], user2=i[1], user3=i[2], is_archived=False)
+
+        # [(<CustomUser: user6>, <CustomUser: user9>), (<CustomUser: admin>, <CustomUser: user7>, <CustomUser: user8>)]
+
+        formatted_pairs = []
+        for pair in pairs:
+            if len(pair) == 2:
+                formatted_pairs.append({
+                    'pair': [pair[0].id, pair[1].id],
+                })
+            elif len(pair) == 3:
+                formatted_pairs.append({
+                    'pair': [pair[0].id, pair[1].id, pair[2].id],
+                })
+
+        return Response({
+            "pairs": str(pairs)
+        }, status=status.HTTP_201_CREATED)

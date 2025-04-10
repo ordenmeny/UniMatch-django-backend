@@ -2,17 +2,15 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
-class HistoryPairsModel(models.Model):
+class PairsModel(models.Model):
     created_at = models.DateField(auto_now_add=True)
     user1 = models.ForeignKey("CustomUser", on_delete=models.CASCADE, related_name="user1")
     user2 = models.ForeignKey("CustomUser", on_delete=models.CASCADE, related_name="user2")
+    user3 = models.ForeignKey("CustomUser", on_delete=models.CASCADE, related_name="user3", null=True, default=None)
+    is_archived = models.BooleanField(null=True)  # Если True - пара уже была
 
     def __str__(self):
         return f'{self.user1} - {self.user2}'
-
-
-class CurrentPairsModel(HistoryPairsModel):
-    pass
 
 
 class CustomUser(AbstractUser):
