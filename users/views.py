@@ -9,7 +9,9 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import NotFound
 from rest_framework import status
-
+from django.views.generic import TemplateView, ListView
+from .models import *
+from users.utils.generate_pairs import generate_weekly_pairs
 
 class GenerateUniqCodeAPIView(APIView):
     def get(self, request):
@@ -74,3 +76,17 @@ class RegisterUserAPIView(CreateAPIView):
             'token': token.key,
             'uniq_code': uniq_code
         }, status=status.HTTP_201_CREATED)
+
+
+class ConfirmPairsView(TemplateView):
+    template_name = 'users/pairs.html'
+
+    def get_context_data(self, *, object_list = ..., **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['users'] = CurrentPairsModel.objects.all()
+        print(context['users'])
+        return context
+
+class GeneratePairsAPIView(CreateAPIView):
+    pass
+

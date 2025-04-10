@@ -2,6 +2,19 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
+class HistoryPairsModel(models.Model):
+    created_at = models.DateField(auto_now_add=True)
+    user1 = models.ForeignKey("CustomUser", on_delete=models.CASCADE, related_name="user1")
+    user2 = models.ForeignKey("CustomUser", on_delete=models.CASCADE, related_name="user2")
+
+    def __str__(self):
+        return f'{self.user1} - {self.user2}'
+
+
+class CurrentPairsModel(HistoryPairsModel):
+    pass
+
+
 class CustomUser(AbstractUser):
     age = models.IntegerField(verbose_name="Возраст", null=True, blank=True)
     university = models.CharField(max_length=255, null=True, blank=True)
@@ -16,7 +29,7 @@ class HobbyModel(models.Model):
 
     def __str__(self):
         return self.name
-    
+
     class Meta:
         verbose_name = "Хобби"
         verbose_name_plural = "Хобби"
