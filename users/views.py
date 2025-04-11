@@ -94,15 +94,17 @@ class GeneratePairsAPIView(CreateAPIView):
     def post(self, request, *args, **kwargs):
         all_pairs = PairsModel.objects.all()
 
-        # Поочередно изменяем у всех объектов на is_archived=True
+        # Изменяем у всех объектов на is_archived=True.
         PairsModel.objects.all().update(is_archived=True)
 
         # Генерируем пары. Получаем список из пар (pairs).
-        # Генерируем пары. Получаем список из пар (pairs).
         all_users = CustomUser.objects.all()
-        past_pairs = {frozenset([(i.user1, i.user2, i.user3) for i in PairsModel.objects.filter(is_archived=True)])}
+        past_pairs = set()
+        for pair in PairsModel.objects.filter(is_archived=True):
+            users = [u for u in [pair.user1, pair.user2, pair.user3] if u is not None]
+            past_pairs.add(frozenset(users))
+
         pairs = generate_weekly_pairs(all_users, past_pairs)
-        print(pairs)
 
         # Поочередно через цикл добавляем пары в БД (модель PairsModel) is_archived=False.
         for i in pairs:
@@ -116,14 +118,14 @@ class GeneratePairsAPIView(CreateAPIView):
         formatted_pairs = []
         for pair in pairs:
             if len(pair) == 2:
-                formatted_pairs.append({
-                    'pair': [pair[0].id, pair[1].id],
-                })
+                formatted_pairs.append(
+                    [pair[0].id, pair[1].id],
+                )
             elif len(pair) == 3:
-                formatted_pairs.append({
-                    'pair': [pair[0].id, pair[1].id, pair[2].id],
-                })
+                formatted_pairs.append(
+                    [pair[0].id, pair[1].id, pair[2].id],
+                )
 
         return Response({
-            "pairs": str(pairs)
+            "pairs": formatted_pairs
         }, status=status.HTTP_201_CREATED)

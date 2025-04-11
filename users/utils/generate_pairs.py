@@ -1,124 +1,58 @@
-import os
-import django
+from collections import defaultdict
+from itertools import combinations, permutations
+import heapq
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djangoProject.settings')
-django.setup()
+def get_user_hobbies(user):
+    return set(h.name for h in user.hobby.all())
 
-from users.models import *  # замени на свою модель
+def compute_similarity(user1, user2):
+    return len(get_user_hobbies(user1) & get_user_hobbies(user2))
 
+def compute_triple_similarity(u1, u2, u3):
+    hobbies = [get_user_hobbies(u) for u in (u1, u2, u3)]
+    return len(hobbies[0] & hobbies[1]) + len(hobbies[0] & hobbies[2]) + len(hobbies[1] & hobbies[2])
 
-from itertools import combinations
-from typing import List, Union, Tuple, Set, FrozenSet
-from users.models import *
-
-
-def generate_weekly_pairs(users: List, past_pairs: Set[FrozenSet]) -> List[Union[Tuple, Tuple[object, object, object]]]:
-    """
-    users: список объектов, у каждого есть метод .tags(), возвращающий список интересов
-    past_pairs: множество frozenset-пар пользователей, которые уже были в паре ранее
-    Возвращает список пар и, при необходимости, одну тройку
-    """
-    result_pairs = []
-    # users_copy = users[:]
-    users_copy = list(users).copy()
-    user_tags = {user: set(user.hobby.all()) for user in users_copy}  # кэшируем интересы
+def generate_weekly_pairs(all_users, past_pairs):
+    users = list(all_users)
     used_users = set()
+    result = []
 
-    print(f"\n[LOG] Начало распределения: {len(users_copy)} пользователей")
+    # Построим кучу из всех возможных пар с приоритетом по количеству общих интересов
+    pair_heap = []
+    for u1, u2 in combinations(users, 2):
+        pair_set = frozenset([u1, u2])
+        if pair_set in past_pairs:
+            continue
+        score = compute_similarity(u1, u2)
+        if score > 0:
+            # Вставляем в кучу с id как tie-breaker
+            heapq.heappush(pair_heap, (-score, u1.id, u2.id, u1, u2))
 
-    # --- Шаг 1: формируем тройку, если нечётное количество ---
-    reserved_trio = None
-    if len(users_copy) % 2 == 1:
-        print("[LOG] Нечётное количество — подбираем тройку...")
-        best_trio = None
+    # Формируем пары с максимальной похожестью
+    while pair_heap:
+        _, _, _, u1, u2 = heapq.heappop(pair_heap)
+        if u1 in used_users or u2 in used_users:
+            continue
+        used_users.update([u1, u2])
+        result.append((u1, u2))
+
+    # Остались неиспользованные
+    remaining = [u for u in users if u not in used_users]
+
+    if len(remaining) == 3:
+        # Пытаемся найти лучшую тройку из трёх оставшихся
         best_score = -1
-
-        for trio in combinations(users_copy, 3):
-            a, b, c = trio
-            t1, t2, t3 = user_tags[a], user_tags[b], user_tags[c]
-
-            # Jaccard между каждой парой внутри тройки
-            score = (
-                len(t1 & t2) / len(t1 | t2) if t1 | t2 else 0 +
-                                                            len(t2 & t3) / len(t2 | t3) if t2 | t3 else 0 +
-                                                                                                        len(t1 & t3) / len(
-                    t1 | t3) if t1 | t3 else 0
-            )
-
+        best_triplet = None
+        for trio in permutations(remaining, 3):
+            trio_set = frozenset(trio)
+            if trio_set in past_pairs:
+                continue
+            score = compute_triple_similarity(*trio)
             if score > best_score:
                 best_score = score
-                best_trio = trio
+                best_triplet = trio
+        if best_triplet and best_score > 0:
+            result.append(best_triplet)
+            used_users.update(best_triplet)
 
-        if best_trio:
-            reserved_trio = best_trio
-            print(f"[LOG] Зарезервирована тройка: {best_trio}, общий Jaccard: {round(best_score, 3)}")
-            for u in best_trio:
-                users_copy.remove(u)
-
-    # --- Шаг 2: формируем пары по интересам, исключая те, что были ---
-    similarity_scores = []
-    for user1, user2 in combinations(users_copy, 2):
-        pair_key = frozenset([user1, user2])
-        if pair_key in past_pairs:
-            continue
-        tags1 = user_tags[user1]
-        tags2 = user_tags[user2]
-        union = tags1 | tags2
-        score = len(tags1 & tags2) / len(union) if union else 0
-        similarity_scores.append((score, user1, user2))
-
-    similarity_scores.sort(reverse=True, key=lambda x: x[0])
-
-    for score, user1, user2 in similarity_scores:
-        if user1 not in used_users and user2 not in used_users:
-            result_pairs.append((user1, user2))
-            used_users.update([user1, user2])
-            past_pairs.add(frozenset([user1, user2]))
-            print(f"[LOG] Сформирована пара: ({user1}, {user2}) — Jaccard: {round(score, 3)}")
-
-    # --- Шаг 3: принудительное объединение оставшихся, с учётом истории ---
-    remaining_users = [u for u in users_copy if u not in used_users]
-    print(f"[LOG] Осталось нераспределённых: {len(remaining_users)}")
-
-    while len(remaining_users) >= 2:
-        found = False
-        for i in range(len(remaining_users)):
-            u1 = remaining_users[i]
-            for j in range(i + 1, len(remaining_users)):
-                u2 = remaining_users[j]
-                if frozenset([u1, u2]) not in past_pairs:
-                    result_pairs.append((u1, u2))
-                    used_users.update([u1, u2])
-                    past_pairs.add(frozenset([u1, u2]))
-                    print(f"[LOG] Принудительно сформирована пара: ({u1}, {u2}) — нет общих интересов, но новая пара")
-                    # Удаляем из remaining_users вручную
-                    remaining_users.pop(j)
-                    remaining_users.pop(i)
-                    found = True
-                    break
-            if found:
-                break
-        if not found:
-            print("[WARN] Не удалось найти новую пару среди оставшихся без повторов.")
-            break
-
-    # --- Шаг 4: добавляем тройку, если она есть ---
-    if reserved_trio:
-        result_pairs.append(reserved_trio)
-        print(f"[LOG] Добавлена тройка: {reserved_trio}")
-
-    print(f"[LOG] Всего сформировано {len(result_pairs)} пар/троек\n")
-    return result_pairs
-
-
-# История прошлых пар (пусть Alice и Bob уже были в паре)
-# all_users = CustomUser.objects.all()
-# history_pairs = [(i.user1, i.user2) for i in PairsModel.objects.filter(is_archived=True)]
-# past_pairs = {frozenset(history_pairs)}
-# На вход функции подается список из пользователей.
-# Получаем пары.
-
-
-# pairs = generate_weekly_pairs(all_users, past_pairs)
-# for p in pairs:
-#     print(p)
+    return result
