@@ -99,6 +99,11 @@ class GeneratePairsAPIView(CreateAPIView):
 
         # Генерируем пары. Получаем список из пар (pairs).
         all_users = CustomUser.objects.all()
+        # if (len(all_users)-1) % 2 == 0:
+        #     # Если количество пользователей четное без спец.пользователя reserve-user,
+        #     # то этого пользователя не учитываем
+
+
         past_pairs = set()
         for pair in PairsModel.objects.filter(is_archived=True):
             users = [u for u in [pair.user1, pair.user2, pair.user3] if u is not None]
