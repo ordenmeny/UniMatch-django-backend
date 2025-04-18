@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path, include
 from django.views.generic import TemplateView
 from .models import *
 from .views import *
@@ -6,6 +6,8 @@ from .views import *
 app_name = "users"
 
 urlpatterns = [
+    # re_path(r'^social/', include('social_django.urls', namespace='social')),
+    # re_path(r'^auth/', include('drf_social_oauth2.urls', namespace='drf')),
     # Регистрация пользователя через API (POST-запрос).
     path('api/register/', RegisterUserAPIView.as_view()),
 
@@ -19,5 +21,10 @@ urlpatterns = [
     # для формирования ссылки на бота в таком виде: https://t.me/Uni_Match_Bot?start=login_`uniq_code`
     path('api/generate-uniq-code/', GenerateUniqCodeAPIView.as_view()),
     path('api/generate-pairs/', GeneratePairsAPIView.as_view()),
+
+    # not api
     path('confirm-pairs/', ConfirmPairsView.as_view()),
+    path('tg-btn-auth/', TemplateView.as_view(template_name='users/tg_auth.html')),
+
+    path('api/tg-auth/', TgAuthView.as_view()),
 ]
