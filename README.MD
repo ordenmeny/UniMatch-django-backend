@@ -30,7 +30,7 @@
   Authorization: token <admin_token>
 ```
 
-##### Для получения <admin_token> необходимо сделать POST-запрос c полями username и password для суперпользователя.
+##### Для получения <admin_token> необходимо сделать POST-запрос c полями username и password для суперпользователя. P.S: для фронтеда будет дан токен, поэтому его можно не получать таким способом.
 ```json 
 auth/token/login/
 ```
