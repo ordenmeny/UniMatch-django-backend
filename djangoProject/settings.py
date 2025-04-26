@@ -10,6 +10,9 @@ SECRET_KEY = os.getenv("SECRET_KEY", "abcdef")
 
 DEBUG = os.getenv("DEBUG", True)
 
+# !!!!! change or delete
+TELEGRAM_BOT_TOKEN = "7852631020:AAGv3e97G8_OoJKlrKx2m97LM3iLwgI6c5c"
+
 ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
@@ -24,6 +27,10 @@ INSTALLED_APPS = [
     'djoser',
     'rest_framework.authtoken',
     "corsheaders",
+    # OAuth
+    'oauth2_provider',
+    'social_django',
+    'drf_social_oauth2'
 ]
 
 MIDDLEWARE = [
@@ -49,6 +56,9 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
             ],
         },
     },
@@ -100,9 +110,13 @@ AUTH_PASSWORD_VALIDATORS = [
 AUTHENTICATION_BACKENDS = [
     "djangoProject.auth_backends.EmailAuthBackend",
     # "django.contrib.auth.backends.ModelBackend",
-    "django.contrib.auth.backends.AllowAllUsersModelBackend"
+    "django.contrib.auth.backends.AllowAllUsersModelBackend",
+    'social_core.backends.telegram.TelegramAuth',
+    # 'drf_social_oauth2.backends.Django0Auth2',
 ]
 
+# 1692072411
+# 1692072411
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
@@ -137,6 +151,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
+
+        # 'oauth2_provider.contrib.rest_framework.0Auth2Authentication',
+        'drf_social_oauth2.authentication.SocialAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -152,3 +169,11 @@ DJOSER = {
 
 CORS_ALLOW_ALL_ORIGINS = True  # поменять!
 CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = [
+    "https://2160-95-164-87-45.ngrok-free.app"
+]
+
+# https://2160-95-164-87-45.ngrok-free.app/users/tg-btn-auth/
+
+
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"

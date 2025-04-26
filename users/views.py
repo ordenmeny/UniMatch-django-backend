@@ -1,6 +1,10 @@
 from django.contrib.auth import get_user_model
+from django.http import HttpResponse, HttpResponseBadRequest
+from django.views import View
 from rest_framework.generics import RetrieveAPIView, DestroyAPIView, UpdateAPIView, RetrieveUpdateDestroyAPIView, \
     CreateAPIView
+
+from djangoProject import settings
 from .serializers import *
 from rest_framework.permissions import IsAdminUser
 from rest_framework.views import APIView
@@ -12,6 +16,9 @@ from rest_framework import status
 from django.views.generic import TemplateView, ListView
 from .models import *
 from users.utils.generate_pairs import generate_weekly_pairs
+from users.utils.check_sign import check_telegram_auth
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 
 class GenerateUniqCodeAPIView(APIView):
@@ -92,6 +99,7 @@ class GeneratePairsAPIView(CreateAPIView):
     serializer_class = PairsSerializer
 
     def post(self, request, *args, **kwargs):
+        print('POST!')
         all_pairs = PairsModel.objects.all()
 
         # Изменяем у всех объектов на is_archived=True.
@@ -102,7 +110,6 @@ class GeneratePairsAPIView(CreateAPIView):
         # if (len(all_users)-1) % 2 == 0:
         #     # Если количество пользователей четное без спец.пользователя reserve-user,
         #     # то этого пользователя не учитываем
-
 
         past_pairs = set()
         for pair in PairsModel.objects.filter(is_archived=True):
@@ -134,3 +141,41 @@ class GeneratePairsAPIView(CreateAPIView):
         return Response({
             "pairs": formatted_pairs
         }, status=status.HTTP_201_CREATED)
+
+
+# Инструкция:
+# Зайти в botfather, выбрать бота, отправить хост.
+@method_decorator(csrf_exempt, name='dispatch')
+class TgAuthView(APIView):
+    def post(self, request, *args, **kwargs):
+        data = request.data
+
+        if not check_telegram_auth(data, settings.TELEGRAM_BOT_TOKEN):
+            return HttpResponseBadRequest("Invalid auth")
+
+        chat_id = data.get("id", "")
+        email = data.get("email", "")
+
+        # Здесь же осуществлять логику добавления chat_id...
+        user_by_email = CustomUser.objects.get(email=email)
+        if user_by_email:
+            user_by_email.chat_id = chat_id
+            user_by_email.save()
+
+        return Response({'user_data': data})
+
+
+# Регистрация:
+# На фронтэнд: заполняются поля:
+# {
+#   "email": "почта@example.com",
+#   "first_name": "Имя",
+#   "last_name": "Фамилия",
+#   "age": 25,
+#   "university": "Университет",
+#   "password": "пароль"
+#   "chat_id": "<empty>",
+# }
+# Делается POST-запрос с пустым chat_id.
+# Пользователь нажимает на виджет тг. Выполняется PATCH-запрос.
+# Делается проверка подписей, по email заполняется chat_id.
