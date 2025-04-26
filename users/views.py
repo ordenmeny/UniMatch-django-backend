@@ -2,11 +2,11 @@ from django.contrib.auth import get_user_model
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views import View
 from rest_framework.generics import RetrieveAPIView, DestroyAPIView, UpdateAPIView, RetrieveUpdateDestroyAPIView, \
-    CreateAPIView
+    CreateAPIView, ListCreateAPIView, ListAPIView
 
 from djangoProject import settings
 from .serializers import *
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.views import APIView
 import uuid
 from rest_framework.response import Response
@@ -61,18 +61,14 @@ class RegisterUserAPIView(CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         # Метод для регистрации пользователя через API (POST-запрос).
-        # В БД сохраняется только uniq_code и введенные данные пользователя.
+        # В БД сохраняется данные пользователя.
         # Создается токен для нового пользователя.
-        # Возвращаются данные пользователя, токен, uniq_code.
+        # Возвращаются данные пользователя, токен.
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         user.is_active = True
-        user.save()
-
-        uniq_code = str(uuid.uuid4())
-        user.uniq_code = uniq_code
         user.save()
 
         # Создаем токен для нового пользователя
@@ -81,25 +77,26 @@ class RegisterUserAPIView(CreateAPIView):
         # Возвращаем данные пользователя и токен
         return Response({
             'user': UserSerializer(user).data,
-            'token': token.key,
-            'uniq_code': uniq_code
+            'token': token.key
         }, status=status.HTTP_201_CREATED)
 
 
-class ConfirmPairsView(TemplateView):
-    template_name = 'users/pairs.html'
-
-    def get_context_data(self, *, object_list=..., **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['users'] = PairsModel.objects.all()
-        return context
-
-
-class GeneratePairsAPIView(CreateAPIView):
+class GeneratePairsAPIView(ListCreateAPIView):
     serializer_class = PairsSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+        pairs = PairsModel.objects.filter(
+            is_archived=True
+        ).filter(
+            models.Q(user1=user) | models.Q(user2=user) | models.Q(user3=user)
+        ).order_by('-created_at')
+
+        serializer = self.get_serializer(pairs, many=True)
+        return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
-        print('POST!')
         all_pairs = PairsModel.objects.all()
 
         # Изменяем у всех объектов на is_archived=True.
@@ -143,7 +140,7 @@ class GeneratePairsAPIView(CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 
-# Инструкция:
+# Перед использованием:
 # Зайти в botfather, выбрать бота, отправить хост.
 @method_decorator(csrf_exempt, name='dispatch')
 class TgAuthView(APIView):
@@ -162,20 +159,12 @@ class TgAuthView(APIView):
             user_by_email.chat_id = chat_id
             user_by_email.save()
 
-        return Response({'user_data': data})
+        return Response({'user_data': data}, status=status.HTTP_201_CREATED)
 
 
-# Регистрация:
-# На фронтэнд: заполняются поля:
-# {
-#   "email": "почта@example.com",
-#   "first_name": "Имя",
-#   "last_name": "Фамилия",
-#   "age": 25,
-#   "university": "Университет",
-#   "password": "пароль"
-#   "chat_id": "<empty>",
-# }
-# Делается POST-запрос с пустым chat_id.
-# Пользователь нажимает на виджет тг. Выполняется PATCH-запрос.
-# Делается проверка подписей, по email заполняется chat_id.
+class HobbyAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        hobbies = request.user.hobby.all().values_list('name', flat=True)
+        return Response(list(hobbies), status=status.HTTP_200_OK)

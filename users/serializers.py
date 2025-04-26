@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import CustomUser
+from .models import *
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,8 +18,36 @@ class UserSerializer(serializers.ModelSerializer):
 
         return user
 
+
 class PairsSerializer(serializers.ModelSerializer):
+    partner = serializers.SerializerMethodField()
+
+    def get_partner(self, obj):
+        partner = []
+        current_user = self.context['request'].user
+
+        if obj.user1 and obj.user1 != current_user:
+            partner.append(f"{obj.user1.first_name} {obj.user1.last_name}")
+        if obj.user2 and obj.user2 != current_user:
+            partner.append(f"{obj.user2.first_name} {obj.user2.last_name}")
+        if obj.user3 and obj.user3 != current_user:
+            partner.append(f"{obj.user3.first_name} {obj.user3.last_name}")
+
+        return partner
+
     class Meta:
-        model = CustomUser
+        model = PairsModel
         fields = "__all__"
+
+
+class HobbySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HobbyModel
+        fields = "__all__"
+
+    def to_representation(self, instance):
+        return {"name": instance}
+
+
+
 

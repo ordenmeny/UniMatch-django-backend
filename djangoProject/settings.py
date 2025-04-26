@@ -177,3 +177,10 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
+
+DJOSER = {
+    'SERIALIZERS': {
+        'user': 'users.serializers.UserSerializer',
+        'current_user': 'users.serializers.UserSerializer',
+    }
+}
