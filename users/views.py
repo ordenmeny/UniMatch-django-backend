@@ -19,7 +19,8 @@ from users.utils.generate_pairs import generate_weekly_pairs
 from users.utils.check_sign import check_telegram_auth
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-
+from datetime import datetime, timedelta, time
+from django.utils import timezone
 
 class GenerateUniqCodeAPIView(APIView):
     def get(self, request):
@@ -60,11 +61,6 @@ class RegisterUserAPIView(CreateAPIView):
     serializer_class = UserSerializer
 
     def create(self, request, *args, **kwargs):
-        # Метод для регистрации пользователя через API (POST-запрос).
-        # В БД сохраняется данные пользователя.
-        # Создается токен для нового пользователя.
-        # Возвращаются данные пользователя, токен.
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -168,3 +164,40 @@ class HobbyAPIView(APIView):
     def get(self, request, *args, **kwargs):
         hobbies = request.user.hobby.all().values_list('name', flat=True)
         return Response(list(hobbies), status=status.HTTP_200_OK)
+
+
+class HobbyAllAPIView(ListAPIView):
+    queryset = HobbyModel.objects.all()
+    serializer_class = HobbySerializer
+
+
+class DaysToMatch(APIView):
+    def get(self, request, *args, **kwargs):
+        now = datetime.now()
+
+        # День недели мэтча (0 = Понедельник, 1 = Вторник, ..., 6 = Воскресенье)
+        day_of_week_match = 0
+
+        # Время мэтча
+        match_time = time(10, 0)  # 10:00 утра
+
+        # Сколько дней до следующего мэтча
+        days_ahead = (day_of_week_match - now.weekday()) % 7
+        if days_ahead == 0:
+            # Сегодня день мэтча, но надо проверить время
+            if now.time() >= match_time:
+                days_ahead = 7  # Уже позже 10:00 — ждём следующий понедельник
+
+        next_match_datetime = datetime.combine(now.date() + timedelta(days=days_ahead), match_time)
+
+        # Разница между сейчас и следующим мэтчем
+        delta = next_match_datetime - now
+
+        response_data = {
+            'days_left': delta.days,
+            'hours_left': delta.seconds // 3600,
+            'minutes_left': (delta.seconds % 3600) // 60,
+            'next_match_at': next_match_datetime.strftime('%Y-%m-%d %H:%M:%S'),
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)

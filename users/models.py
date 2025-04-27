@@ -14,13 +14,16 @@ class PairsModel(models.Model):
 
 
 class CustomUser(AbstractUser):
+    email = models.EmailField(unique=True)
+
     age = models.IntegerField(verbose_name="Возраст", null=True, blank=True)
-    university = models.CharField(max_length=255, null=True, blank=True)
-    uniq_code = models.CharField(max_length=50, null=True, blank=True)
     chat_id = models.CharField(max_length=50, null=True, blank=True)
     image = models.ImageField(upload_to="users/", null=True, blank=True)
     hobby = models.ManyToManyField("HobbyModel", verbose_name="Хобби", blank=True)
 
+
+    def __str__(self):
+        return f'{self.first_name} {self.last_name}'
 
 class HobbyModel(models.Model):
     name = models.CharField(max_length=255, null=True, blank=True)

@@ -109,10 +109,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 AUTHENTICATION_BACKENDS = [
     "djangoProject.auth_backends.EmailAuthBackend",
-    # "django.contrib.auth.backends.ModelBackend",
     "django.contrib.auth.backends.AllowAllUsersModelBackend",
     'social_core.backends.telegram.TelegramAuth',
-    # 'drf_social_oauth2.backends.Django0Auth2',
 ]
 
 # 1692072411
@@ -123,7 +121,8 @@ AUTHENTICATION_BACKENDS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Yekaterinburg'
+USE_TZ = True
 
 USE_I18N = True
 
@@ -155,9 +154,9 @@ REST_FRAMEWORK = {
         # 'oauth2_provider.contrib.rest_framework.0Auth2Authentication',
         'drf_social_oauth2.authentication.SocialAuthentication',
     ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
+    # 'DEFAULT_PERMISSION_CLASSES': [
+    #     'rest_framework.permissions.IsAuthenticated',
+    # ],
 }
 
 DJOSER = {
@@ -182,5 +181,7 @@ DJOSER = {
     'SERIALIZERS': {
         'user': 'users.serializers.UserSerializer',
         'current_user': 'users.serializers.UserSerializer',
-    }
+        'token': 'users.serializers.CustomTokenSerializer',
+    },
+    'LOGIN_FIELD': 'email',
 }
