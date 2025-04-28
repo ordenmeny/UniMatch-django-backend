@@ -5,9 +5,11 @@ from djoser.serializers import TokenSerializer
 
 
 class UserSerializer(serializers.ModelSerializer):
+    birth = serializers.DateField(input_formats=['%d-%m-%Y'], required=False, format='%d-%m-%Y')
+
     class Meta:
         model = get_user_model()
-        fields = ['first_name', 'last_name', 'email', 'age', 'chat_id', 'image', 'hobby', 'password']
+        fields = ['first_name', 'last_name', 'email', 'birth', 'chat_id', 'image', 'hobby', 'password']
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):

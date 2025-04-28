@@ -65,6 +65,7 @@ class RegisterUserAPIView(CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         user.is_active = True
+        # user.birth =
         user.save()
 
         # Создаем токен для нового пользователя
