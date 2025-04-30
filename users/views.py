@@ -65,7 +65,6 @@ class RegisterUserAPIView(CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         user.is_active = True
-        # user.birth =
         user.save()
 
         # Создаем токен для нового пользователя
@@ -170,6 +169,7 @@ class HobbyAPIView(APIView):
 class HobbyAllAPIView(ListAPIView):
     queryset = HobbyModel.objects.all()
     serializer_class = HobbySerializer
+    permission_classes = [IsAuthenticated]
 
 
 class DaysToMatch(APIView):

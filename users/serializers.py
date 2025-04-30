@@ -1,7 +1,11 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import *
-from djoser.serializers import TokenSerializer
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+
+class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    username_field = 'email'
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -59,14 +63,12 @@ class HobbySerializer(serializers.ModelSerializer):
     # def to_representation(self, instance):
     #     return {"name": instance}
 
-
-class CustomTokenSerializer(TokenSerializer):
-    class Meta(TokenSerializer.Meta):
-        fields = ('key', )
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        return {
-            'token': representation['key']
-        }
-
+# class CustomTokenSerializer(TokenSerializer):
+#     class Meta(TokenSerializer.Meta):
+#         fields = ('key', )
+#
+#     def to_representation(self, instance):
+#         representation = super().to_representation(instance)
+#         return {
+#             'token': representation['key']
+#         }

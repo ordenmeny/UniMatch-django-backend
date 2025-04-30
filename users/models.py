@@ -20,6 +20,8 @@ class CustomUser(AbstractUser):
     image = models.ImageField(upload_to="users/", null=True, blank=True)
     hobby = models.ManyToManyField("HobbyModel", verbose_name="Хобби", blank=True)
 
+    USERNAME_FIELD = 'email'  # Используй поле email как уникальный идентификатор пользователя при логине.
+    REQUIRED_FIELDS = ['username']  # Поля, которые обязательны при создании суперпользователя.
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
