@@ -20,13 +20,7 @@ from users.utils.check_sign import check_telegram_auth
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from datetime import datetime, timedelta, time
-from django.utils import timezone
-
-class GenerateUniqCodeAPIView(APIView):
-    def get(self, request):
-        uniq_code = str(uuid.uuid4())
-
-        return Response({'uniq_code': uniq_code})
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class UserByUniqCodeAPIView(RetrieveUpdateDestroyAPIView):
@@ -67,13 +61,14 @@ class RegisterUserAPIView(CreateAPIView):
         user.is_active = True
         user.save()
 
-        # Создаем токен для нового пользователя
-        token, created = Token.objects.get_or_create(user=user)
+        refresh = RefreshToken.for_user(user)
+        access = refresh.access_token
 
         # Возвращаем данные пользователя и токен
         return Response({
             'user': UserSerializer(user).data,
-            'token': token.key
+            'refresh': str(refresh),
+            'access': str(access)
         }, status=status.HTTP_201_CREATED)
 
 

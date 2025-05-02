@@ -8,13 +8,9 @@ app_name = "users"
 urlpatterns = [
     path('api/register/', RegisterUserAPIView.as_view()),
 
-    # Все запросы для работы с пользователями по uniq_code.
-    path('api/user-by-uniq-code/<str:uniq_code>/', UserByUniqCodeAPIView.as_view()),
-
     # Все запросы для работы с пользователями по chat_id.
     path('api/user-by-chat-id/<str:chat_id>/', UserByChatIDAPIView.as_view()),
 
-    path('api/generate-uniq-code/', GenerateUniqCodeAPIView.as_view()),
     path('api/pairs/', GeneratePairsAPIView.as_view()),
     path('api/tg-auth/', TgAuthView.as_view()),
     path('api/hobby/', HobbyAPIView.as_view()),
