@@ -59,16 +59,3 @@ class HobbySerializer(serializers.ModelSerializer):
     class Meta:
         model = HobbyModel
         fields = "__all__"
-
-    # def to_representation(self, instance):
-    #     return {"name": instance}
-
-# class CustomTokenSerializer(TokenSerializer):
-#     class Meta(TokenSerializer.Meta):
-#         fields = ('key', )
-#
-#     def to_representation(self, instance):
-#         representation = super().to_representation(instance)
-#         return {
-#             'token': representation['key']
-#         }

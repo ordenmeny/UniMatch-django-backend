@@ -28,10 +28,10 @@ INSTALLED_APPS = [
     'djoser',
     'rest_framework.authtoken',
     "corsheaders",
-    # OAuth
     'oauth2_provider',
     'social_django',
-    'drf_social_oauth2'
+    'drf_social_oauth2',
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 MIDDLEWARE = [
@@ -183,8 +183,10 @@ DJOSER = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "ROTATE_REFRESH_TOKENS": False,
-    "BLACKLIST_AFTER_ROTATION": False,
+
+    "ROTATE_REFRESH_TOKENS": True, # выдается новый refresh-токен
+    "BLACKLIST_AFTER_ROTATION": True,  # старый refresh-токен автоматически добавляется в blacklist и больше не работает
+
     "UPDATE_LAST_LOGIN": False,
 
     "ALGORITHM": "HS256",
