@@ -56,13 +56,21 @@ class RegisterUserAPIView(CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
+
+        # if serializer.is_valid():
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         user.is_active = True
         user.save()
-
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
+        # else:
+            # errors = []
+            # for field, error_list in serializer.errors.items():
+            #     for error in error_list:
+            #         errors.append(str(error))
+            #
+            # return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
         # Возвращаем данные пользователя и токен
         return Response({
@@ -176,8 +184,6 @@ class HobbyAPIView(APIView):
         user.save()
 
         return Response(new_hobbies, status=status.HTTP_200_OK)
-
-
 
 
 class HobbyAllAPIView(ListAPIView):

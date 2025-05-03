@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import *
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -9,20 +11,34 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    birth = serializers.DateField(input_formats=['%d-%m-%Y'], required=False, format='%d-%m-%Y')
+    birth = serializers.DateField(
+        input_formats=['%d-%m-%Y'],
+        required=False,
+        format='%d-%m-%Y',
+        error_messages={
+            'invalid': 'Неправильный формат даты.'
+        }
+    )
 
     class Meta:
         model = get_user_model()
         fields = ['first_name', 'last_name', 'email', 'birth', 'chat_id', 'image', 'hobby', 'password']
         extra_kwargs = {'password': {'write_only': True}}
 
+    def validate_password(self, password):
+        try:
+            validate_password(password)
+        except ValidationError as e:
+            raise serializers.ValidationError(e.messages)
+        return password
+
     def create(self, validated_data):
-        # Метод, который срабатывает при регистрации пользователя
         validated_data['username'] = validated_data['email']
-        password = validated_data.pop('password')  # Извлекаем пароль
-        user = super().create(validated_data)  # Создаем пользователя
-        user.set_password(password)  # Хешируем пароль
-        user.save()  # Сохраняем пользователя с хешированным паролем
+        password = validated_data.pop('password')
+
+        user = super().create(validated_data)
+        user.set_password(password)
+        user.save()
 
         return user
 
