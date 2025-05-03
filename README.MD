@@ -1,174 +1,311 @@
 
-## Описание API
+## API документация
 
-### 1. Регистрация пользователя
+### Регистрация
 
-#### Чтобы зарегистрировать пользователя, необходимо выполнить следующий POST-запрос:
-
-```json 
-/users/api/register/
+```
+  POST users/api/register/
 ```
 
-#### Параметры запроса:
-```json
+```http 
 {
-  "username": "имя_пользователя",
   "email": "почта@example.com",
   "first_name": "Имя",
   "last_name": "Фамилия",
-  "age": 25,
-  "university": "Университет",
-  "image": "ссылка_на_изображение",
-  "password": "пароль"
+  "birth": "20-01-2000",
+  "password": "пароль",
+  "hobby": [1, 2, 5]
 }
 ```
 
-#### Условия:
-* Пароли password1 и password2 из формы должны совпадать, необходимо проверить на frontend.
-* В хедере запроса необходимо передавать токен администратора:
-```json
-  Authorization: token <admin_token>
-```
+Уточнение: [1, 2, 5] - индексы хобби (тэгов)
 
-##### Для получения <admin_token> необходимо сделать POST-запрос c полями username и password для суперпользователя. P.S: для фронтеда будет дан токен, поэтому его можно не получать таким способом.
-```json 
-auth/token/login/
-```
+Response:
 
-#### Ответ:
-```json
-{
+```http
+  {
     "user": {
-        "id": 12,
-        "username": "имя_пользователя",
-        "email": "почта@example.com",
         "first_name": "Имя",
         "last_name": "Фамилия",
-        "age": 25,
-        "university": "Университет",
-        "image": "ссылка_на_изображение"
+        "email": "email@example.com",
+        "birth": "02-03-2000",
+        "chat_id": null,
+        "image": null,
+        "hobby": [
+            1,
+            2,
+            5
+        ]
     },
-    "token": "86a2afcc646af04e2617019c2",
-    "uniq_code": "f6de81a7-a99c-6514d57fab10"
+    "refresh": "<refresh_token>",
+    "access": "<access_token>"
 }
 ```
 
-#### Примечание:
-* token и uniq_code - генерируются на backend автоматически
+Код успешного ответа: 201.
+Сохранить refresh и access токены на клиенте.
 
-#### После успешной регистрации фронтенд должен:
-* Сохранить полученный token.
-* Сформировать ссылку на Telegram-бота в следующем формате:
-```json
-https://t.me/Uni_Match_Bot?start=uniq_code
-```
-
-
-### 2. Авторизация пользователя (два способа)
-#### 1) Авторизация через форму (логин/email + пароль)
-```json
-POST /auth/token/login/
-```
-
-#### Параметры запроса
-```json
+!!! change !!!
+Если email уже существует (код ошибки: 400):
 {
-  "username": "логин_или_email",
-  "password": "пароль"
+    "email": [
+        "user with this email already exists."
+    ]
+}
+
+
+### Авторизация
+
+```
+  POST api/token/
+```
+
+```http
+  {
+    "email": "user9@yandex.ru",
+    "password": "пароль"
+  }
+```
+
+Response (status 200): 
+```http
+  {
+    "refresh": "<refresh_token>",
+    "access": "<access_token>"
+  }
+```
+Необходимо сохранить refresh и access токены на клиенте.
+
+Ошибка 401 (неверный email или пароль):
+```http
+{
+    "detail": "No active account found with the given credentials"
 }
 ```
 
-#### В хедере запроса необходимо передавать токен администратора:
-```json
-  Authorization: token <admin_token>
+
+### Обновление access-токен
+
+Условие, при котором необходимо обновить access-токен:
+если получен ответ с кодом 401 (при доступе к контенту и т.д), 
+но refresh-токен доступен.
+
+При запросе меняется не только access-токен, но и refresh-токен, поэтому на клиенте необходимо сохранить оба токена. 
+
+```
+POST: api/token/refresh/
 ```
 
-#### Ответ:
-```json
+```http
 {
-  "auth_token": "токен_пользователя_для_авторизации"
+    "refresh": "<refresh_token>"
 }
 ```
 
-Полученный токен необходимо сохранить в сессиях браузера для дальнейших запросов.
 
-#### 2) Авторизация через Telegram-бота
-#### Для этого необходимо:
-##### 1. Сделать GET-запрос:
-```json
-GET запрос на /users/api/generate-uniq-code/
-```
-##### 2. Ответ будет содержать уникальный код:
-```json
+Response (status 200):
+```http
 {
-  "uniq_code": "уникальный_код"
+    "access": "<access_token>",
+    "refresh": "<refresh_token>"
 }
 ```
-##### 3. Сформировать ссылку на Telegram-бота в формате:
-```json
-https://t.me/Uni_Match_Bot?start=login_<uniq_code>
+
+Если ошибка, то редирект на страницу с авторизацией.
+
+
+### Получение текущего пользователя по JWT-токену
+
+```
+POST: auth/users/me/
 ```
 
-##### 4. Пользователь переходит по этой ссылке, и в боте происходит связывание uniq_code с chat_id.
-##### 5. После этого нужно выполнить GET запрос на:
-```json
-/users/api/get-user-by-uniq-code/<uniq_code>/
+```http
+Authorization: Bearer <access_token>
 ```
-##### 6. Ответ будет содержать данные пользователя и его токен:
-```json
+
+Response (200):
+```
 {
-    "user": {
-        "id": 12,
-        "username": "имя_пользователя",
-        "email": "почта@example.com",
-        "first_name": "Имя",
-        "last_name": "Фамилия",
-        "age": 25,
-        "university": "Университет",
-        "image": "ссылка_на_изображение"
+    "first_name": "Имя",
+    "last_name": "Фамилия",
+    "email": "user9@yandex.ru",
+    "birth": null,
+    "chat_id": null,
+    "image": null,
+    "hobby": [1, 2, 3]
+}
+```
+
+### Выйти
+Отозвать refresh-токен и удалить access-токен на клиенте.
+```
+POST: api/token/blacklist/
+```
+```
+{
+    "refresh": "<refresh_token>"
+}
+```
+   
+Response: 200
+
+
+### Привязка в тг-боту
+```
+POST: users/api/tg-auth/
+```
+Пример использования:
+[Пример](https://github.com/ordenmeny/UniMatch-django-backend/blob/main/users/templates/users/tg_auth.html)
+
+Код успешного ответа: 201.
+
+
+### Получение истории мэтчей текущего пользователя:
+```
+GET: users/api/pairs/
+```
+```
+Authorization: Bearer <access_token>
+```
+
+Response (status 200):
+```
+[
+    {
+        "id": 222,
+        "partner": {
+            "id": 35,
+            "first_name": "Александр",
+            "last_name": "Кожевников",
+            "email": "user4@yandex.ru"
+        },
+        "created_at": "2025-04-27"
     },
-    "token": "86a2afc4e2617019c2"
+    {
+        "id": 223,
+        "partner": {
+            "id": 31,
+            "first_name": "Дмитрий",
+            "last_name": "Александров",
+            "email": "admin@yandex.ru"
+        },
+        "created_at": "2025-04-27"
+    }
+]
+```
+
+### Получение списка тэгов пользователя
+```
+GET: users/api/hobby/
+```
+```
+Authorization: Bearer <access_token>
+```
+
+Response (status 200):
+[
+    "Программирование",
+    "Спорт",
+    "Музыка"
+]
+
+
+### Получение списка тэгов
+```
+GET: users/api/hobby/all/
+```
+```
+Authorization: Bearer <access_token>
+```
+Response (status 200):
+```
+[
+    {
+        "id": 1,
+        "name": "Программирование"
+    },
+    {
+        "id": 2,
+        "name": "Спорт"
+    },
+    {
+        "id": 3,
+        "name": "Рисование"
+    },
+    {
+        "id": 4,
+        "name": "Литература"
+    }
+]
+```
+
+### Получение тэгов пользователя и всех тэгов в одном запросе
+```
+GET: users/api/hobby/total/
+```
+```
+Authorization: Bearer <access_token>
+```
+
+Response (status 200)
+```
+{
+    "user_tags": [
+        {
+            "id": 2,
+            "name": "Литература"
+        },
+        {
+            "id": 3,
+            "name": "История"
+        }
+    ],
+    "all_tags": [
+        {
+            "id": 1,
+            "name": "Программирование"
+        },
+        {
+            "id": 2,
+            "name": "Литература"
+        },
+        {
+            "id": 3,
+            "name": "История"
+        }
+    ]
 }
 ```
 
-##### 7. Необходимо сохранить token в сессиях браузера.
-
-## Запуск Django-проекта на локальной машине
-
-#### 1. Клонируйте репозиторий:
-```bash
-git clone <url_репозитория>
-cd <папка_проекта>
+### Обновление тэгов
+```
+PATCH: users/api/hobby/
+```
+```
+Authorization: Bearer <access_token> 
+```
+```
+{
+    "hobby": [1, 2]
+}
 ```
 
-#### 2. Создайте и активируйте виртуальное окружение:
-###### Для Linux/MacOS:
-```bash
-python3 -m venv venv
-source venv/bin/activate
+Список [1, 2] - итоговые тэги пользователя.
+
+Response: status 200
+
+### Дней до мэтча:
 ```
-###### Для Windows:
-```bash
-python -m venv venv
-.\venv\Scripts\activate
-```
-#### 3. Установите зависимости:
-```bash
-pip install -r req.txt
+GET: users/api/days-to-match/
 ```
 
-#### 4. Настройте базу данных:
-```bash
-python manage.py migrate
-``` 
-
-#### 5. Создайте суперпользователя:
-```bash
-python manage.py createsuperuser
+Response (status 200):
 ```
-
-#### 6. Запустите сервер:
-```bash
-python manage.py runserver
+{
+    "days_left": 1, // полных дней до
+    "hours_left": 13, // полных дней до + полных часов до
+    "minutes_left": 17, // полных дней до + полных часов до + полных минут до
+    "next_match_at": "2025-04-29 10:00:00" // В общем виде дата-время след.мэтча
+}
 ```
-##### Сервер будет доступен по адресу http://127.0.0.1:8000

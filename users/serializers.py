@@ -59,3 +59,10 @@ class HobbySerializer(serializers.ModelSerializer):
     class Meta:
         model = HobbyModel
         fields = "__all__"
+
+
+class HobbyUpdateSerializer(serializers.Serializer):
+    hobby = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=True
+    )

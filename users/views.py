@@ -160,6 +160,25 @@ class HobbyAPIView(APIView):
         hobbies = request.user.hobby.all().values_list('name', flat=True)
         return Response(list(hobbies), status=status.HTTP_200_OK)
 
+    def patch(self, request, *args, **kwargs):
+        # user = request.user
+        #
+        # user.hobby.set(request.data["hobby"])
+        #
+        # user.save()
+        #
+        # return Response({'message': 'tags updated'}, status=status.HTTP_200_OK)
+        user = request.user
+        serializer = HobbyUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        new_hobbies = serializer.validated_data["hobby"]
+        user.hobby.set(new_hobbies)
+        user.save()
+
+        return Response(new_hobbies, status=status.HTTP_200_OK)
+
+
+
 
 class HobbyAllAPIView(ListAPIView):
     queryset = HobbyModel.objects.all()
@@ -197,3 +216,23 @@ class DaysToMatch(APIView):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+class HobbyTotal(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+
+        user_tags = user.hobby.all()
+        all_tags = HobbyModel.objects.all()
+
+        user_tags_data = [{'id': tag.id, 'name': tag.name} for tag in user_tags]
+        all_tags_data = [{'id': tag.id, 'name': tag.name} for tag in all_tags]
+
+        response_data = {
+            'user_tags': user_tags_data,
+            'all_tags': all_tags_data
+        }
+
+        return Response(response_data)
