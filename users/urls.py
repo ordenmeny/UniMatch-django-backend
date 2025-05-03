@@ -7,7 +7,7 @@ app_name = "users"
 
 urlpatterns = [
     path('api/register/', RegisterUserAPIView.as_view()),
-
+    path('api/update/user/', UpdateUserAPIView.as_view()),
     # Все запросы для работы с пользователями по chat_id.
     path('api/user-by-chat-id/<str:chat_id>/', UserByChatIDAPIView.as_view()),
 

@@ -3,6 +3,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.views import View
 from rest_framework.generics import RetrieveAPIView, DestroyAPIView, UpdateAPIView, RetrieveUpdateDestroyAPIView, \
     CreateAPIView, ListCreateAPIView, ListAPIView
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 
 from djangoProject import settings
 from .serializers import *
@@ -21,6 +22,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from datetime import datetime, timedelta, time
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.exceptions import ValidationError
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 
 class UserByUniqCodeAPIView(RetrieveUpdateDestroyAPIView):
@@ -57,22 +60,32 @@ class RegisterUserAPIView(CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
 
-        # if serializer.is_valid():
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            formatted_errors = {}
+
+            for field, messages in serializer.errors.items():
+                if field == 'email':
+                    for message in messages:
+                        if message.code == 'unique':
+                            formatted_errors[field] = 'Пользователь с таким email уже существует.'
+                            break
+                if field == 'password':
+                    formatted_errors[field] = ('Пароль либо слишком простой, '
+                                               'либо содержит меньше 4 символов.')
+                if field == 'birth':
+                    continue
+                else:
+                    formatted_errors[field] = messages[0]
+
+            return Response(formatted_errors, status=status.HTTP_400_BAD_REQUEST)
+
         user = serializer.save()
         user.is_active = True
+
         user.save()
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
-        # else:
-            # errors = []
-            # for field, error_list in serializer.errors.items():
-            #     for error in error_list:
-            #         errors.append(str(error))
-            #
-            # return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # Возвращаем данные пользователя и токен
         return Response({
             'user': UserSerializer(user).data,
             'refresh': str(refresh),
@@ -169,13 +182,6 @@ class HobbyAPIView(APIView):
         return Response(list(hobbies), status=status.HTTP_200_OK)
 
     def patch(self, request, *args, **kwargs):
-        # user = request.user
-        #
-        # user.hobby.set(request.data["hobby"])
-        #
-        # user.save()
-        #
-        # return Response({'message': 'tags updated'}, status=status.HTTP_200_OK)
         user = request.user
         serializer = HobbyUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -242,3 +248,11 @@ class HobbyTotal(APIView):
         }
 
         return Response(response_data)
+
+
+class UpdateUserAPIView(UpdateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user

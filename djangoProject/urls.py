@@ -8,6 +8,7 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
     TokenBlacklistView
 )
+
 from .schema import schema_view
 
 urlpatterns = [

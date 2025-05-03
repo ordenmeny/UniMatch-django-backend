@@ -44,18 +44,15 @@ Response (status 201):
 Сохранить refresh и access токены на клиенте.
 
 Response (status 400):
+```
 {
-    "email": [
-        "пользователь с таким email уже существует."
-    ],
-    "birth": [
-        "Неправильный формат даты."
-    ],
-    "password": [
-        "Введённый пароль слишком короткий. Он должен содержать как минимум 4 символа."
-    ]
+    "email": "пользователь с таким email уже существует.",
+    "password": "Пароль либо слишком простой, либо содержит меньше 4 символов."
 }
+```
 
+На клиенте проверить валидность email, first_name, last_name, birth на формат.
+Пароли проверить на равенство.
 
 ### Авторизация
 
@@ -82,7 +79,7 @@ Response (status 200):
 Ошибка 401 (неверный email или пароль):
 ```http
 {
-    "detail": "No active account found with the given credentials"
+    "detail": "Неверный email или пароль"
 }
 ```
 
@@ -312,3 +309,42 @@ Response (status 200):
     "next_match_at": "2025-04-29 10:00:00" // В общем виде дата-время след.мэтча
 }
 ```
+
+### Обновление данных пользователя (в т.ч хобби)
+```
+PATCH users/api/update/user/
+```
+```
+Authorization: Bearer <access_token> 
+```
+
+Передаем только те данные, которые были изменены.
+```
+{
+  "first_name": "Дэн",
+  "last_name": "Рейнолдс",
+  "birth": "05-06-2000",
+  "hobby": [1, 2, 7],
+  "tg_link": "@user-dan"
+}
+```
+
+Response (status 200):
+```
+{
+    "id": 59,
+    "first_name": "Дэн",
+    "last_name": "Рейнолдс",
+    "email": "danraynolds16@example.com",
+    "birth": "05-06-2000",
+    "chat_id": null,
+    "image": null,
+    "hobby": [
+        1,
+        2,
+        7
+    ],
+    "tg_link": "@user-dan"
+}
+```
+

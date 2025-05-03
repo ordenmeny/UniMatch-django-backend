@@ -9,6 +9,10 @@ from django.core.exceptions import ValidationError
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
     username_field = 'email'
 
+    default_error_messages = {
+        "no_active_account": "Неверный email или пароль"
+    }
+
 
 class UserSerializer(serializers.ModelSerializer):
     birth = serializers.DateField(
@@ -22,7 +26,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ['first_name', 'last_name', 'email', 'birth', 'chat_id', 'image', 'hobby', 'password']
+        fields = ['id', 'first_name', 'last_name', 'email', 'birth', 'chat_id', 'image', 'hobby', 'password', 'tg_link']
         extra_kwargs = {'password': {'write_only': True}}
 
     def validate_password(self, password):
