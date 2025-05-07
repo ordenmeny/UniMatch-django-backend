@@ -7,7 +7,7 @@ from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 
 from djangoProject import settings
 from .serializers import *
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 import uuid
 from rest_framework.response import Response
@@ -24,7 +24,7 @@ from datetime import datetime, timedelta, time
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.views import TokenObtainPairView
-
+from rest_framework.exceptions import AuthenticationFailed
 
 class UserByUniqCodeAPIView(RetrieveUpdateDestroyAPIView):
     queryset = get_user_model().objects.all()
@@ -257,3 +257,20 @@ class UpdateUserAPIView(UpdateAPIView):
     def get_object(self):
         return self.request.user
 
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = TokenObtainPairSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except AuthenticationFailed:
+            return Response({'error': 'Неверный email или пароль'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # validated_data = serializer.validated_data
+        # validated_data.pop('refresh')
+
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
