@@ -61,23 +61,23 @@ class RegisterUserAPIView(CreateAPIView):
         serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():
-            formatted_errors = {}
+            error_at_all = ''
 
             for field, messages in serializer.errors.items():
                 if field == 'email':
                     for message in messages:
                         if message.code == 'unique':
-                            formatted_errors[field] = 'Пользователь с таким email уже существует.'
+                            error_at_all += 'Пользователь с таким email уже существует.'
                             break
                 if field == 'password':
-                    formatted_errors[field] = ('Пароль либо слишком простой, '
-                                               'либо содержит меньше 4 символов.')
+                    error_at_all += 'Пароль либо слишком простой, либо содержит меньше 4 символов.'
                 if field == 'birth':
-                    continue
-                else:
-                    formatted_errors[field] = messages[0]
+                    error_at_all += 'Проблема с датой.'
 
-            return Response(formatted_errors, status=status.HTTP_400_BAD_REQUEST)
+                if error_at_all == '':
+                    error_at_all += 'Произошла непредвиденная ошибка.'
+
+            return Response({'error': error_at_all}, status=status.HTTP_400_BAD_REQUEST)
 
         user = serializer.save()
         user.is_active = True
@@ -195,7 +195,7 @@ class HobbyAPIView(APIView):
 class HobbyAllAPIView(ListAPIView):
     queryset = HobbyModel.objects.all()
     serializer_class = HobbySerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
 
 class DaysToMatch(APIView):
@@ -256,3 +256,4 @@ class UpdateUserAPIView(UpdateAPIView):
 
     def get_object(self):
         return self.request.user
+

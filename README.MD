@@ -3,7 +3,7 @@
 ### Регистрация
 
 ```
-  POST users/api/register/
+  POST api/register/
 ```
 
 ```http 
@@ -44,10 +44,10 @@ Response (status 201):
 Сохранить refresh и access токены на клиенте.
 
 Response (status 400):
+change !!!
 ```
 {
-    "email": "пользователь с таким email уже существует.",
-    "password": "Пароль либо слишком простой, либо содержит меньше 4 символов."
+    "error": "Пользователь с таким email уже существует.",
 }
 ```
 
@@ -117,7 +117,7 @@ Response (status 200):
 ### Получение текущего пользователя по JWT-токену
 
 ```
-POST: auth/users/me/
+GET: api/auth/users/me/
 ```
 
 ```http
@@ -153,7 +153,7 @@ Response: 200
 
 ### Привязка в тг-боту
 ```
-POST: users/api/tg-auth/
+POST: api/tg-auth/
 ```
 Пример использования:
 [Пример](https://github.com/ordenmeny/UniMatch-django-backend/blob/main/users/templates/users/tg_auth.html)
@@ -163,7 +163,7 @@ POST: users/api/tg-auth/
 
 ### Получение истории мэтчей текущего пользователя:
 ```
-GET: users/api/pairs/
+GET: api/pairs/
 ```
 ```
 Authorization: Bearer <access_token>
@@ -197,7 +197,7 @@ Response (status 200):
 
 ### Получение списка тэгов пользователя
 ```
-GET: users/api/hobby/
+GET: api/hobby/
 ```
 ```
 Authorization: Bearer <access_token>
@@ -213,11 +213,9 @@ Response (status 200):
 
 ### Получение списка тэгов
 ```
-GET: users/api/hobby/all/
+GET: api/hobby/all/
 ```
-```
-Authorization: Bearer <access_token>
-```
+
 Response (status 200):
 ```
 [
@@ -242,7 +240,7 @@ Response (status 200):
 
 ### Получение тэгов пользователя и всех тэгов в одном запросе
 ```
-GET: users/api/hobby/total/
+GET: api/hobby/total/
 ```
 ```
 Authorization: Bearer <access_token>
@@ -280,7 +278,7 @@ Response (status 200)
 
 ### Обновление тэгов
 ```
-PATCH: users/api/hobby/
+PATCH: api/hobby/
 ```
 ```
 Authorization: Bearer <access_token> 
@@ -297,7 +295,7 @@ Response: status 200
 
 ### Дней до мэтча:
 ```
-GET: users/api/days-to-match/
+GET: api/days-to-match/
 ```
 
 Response (status 200):
@@ -312,7 +310,7 @@ Response (status 200):
 
 ### Обновление данных пользователя (в т.ч хобби)
 ```
-PATCH users/api/update/user/
+PATCH api/update/user/
 ```
 ```
 Authorization: Bearer <access_token> 

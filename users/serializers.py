@@ -16,12 +16,12 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     birth = serializers.DateField(
-        input_formats=['%d-%m-%Y'],
+        # input_formats=['%d-%m-%Y'],
         required=False,
-        format='%d-%m-%Y',
-        error_messages={
-            'invalid': 'Неправильный формат даты.'
-        }
+        # format='%d-%m-%Y',
+        # error_messages={
+        #     'invalid': 'Неправильный формат даты.'
+        # }
     )
 
     class Meta:

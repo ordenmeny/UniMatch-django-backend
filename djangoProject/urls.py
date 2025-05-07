@@ -13,17 +13,18 @@ from .schema import schema_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('users/', include('users.urls')),
+    path('', include('users.urls')),
 
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0),
          name='schema-swagger-ui'),
-    # Djoser
-    re_path(r'^auth/', include('djoser.urls')),
     # Simple JWT
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('api/token/blacklist/', TokenBlacklistView.as_view(), name='token_blacklist'),
+
+    # Djoser
+    re_path(r'api/auth/', include('djoser.urls')),
 
 ]
 
