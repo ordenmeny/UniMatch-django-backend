@@ -17,12 +17,7 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     birth = serializers.DateField(
-        # input_formats=['%d-%m-%Y'],
         required=False,
-        # format='%d-%m-%Y',
-        # error_messages={
-        #     'invalid': 'Неправильный формат даты.'
-        # }
     )
     hobby = serializers.SerializerMethodField()
 
@@ -70,7 +65,8 @@ class PairsSerializer(serializers.ModelSerializer):
             'id': partner.id,
             'first_name': partner.first_name,
             'last_name': partner.last_name,
-            'email': partner.email
+            'email': partner.email,
+            'hobby': HobbySerializer(partner.hobby.all(), many=True).data
         }
 
         return partner_data

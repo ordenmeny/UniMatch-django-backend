@@ -159,7 +159,7 @@ REST_FRAMEWORK = {
 CORS_ALLOW_ALL_ORIGINS = True  # поменять!
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
-    "https://user600096716-mcem4rgm.tunnel.vk-apps.com"
+    "https://user283739440-4wofppag.tunnel.vk-apps.com",
 ]
 
 # https://2160-95-164-87-45.ngrok-free.app/users/tg-btn-auth/

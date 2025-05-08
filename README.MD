@@ -188,7 +188,17 @@ Response (status 200):
             "id": 35,
             "first_name": "Александр",
             "last_name": "Кожевников",
-            "email": "user4@yandex.ru"
+            "email": "user4@yandex.ru",
+            "hobby": [
+                {
+                    "id": 2,
+                    "name": "Спорт"
+                },
+                {
+                    "id": 6,
+                    "name": "Литература"
+                }
+            ]
         },
         "created_at": "2025-04-27"
     },
