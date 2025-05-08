@@ -233,3 +233,49 @@ POST: api/token/blacklist/
 }
    
 Response: 200
+
+
+
+
+
+
+Архив:
+
+### Обновление тэгов
+
+```
+PATCH: api/hobby/
+```
+
+```
+Authorization: Bearer <access_token> 
+```
+
+```
+{
+    "hobby": [1, 2]
+}
+```
+
+Список [1, 2] - итоговые тэги пользователя.
+
+Response: status 200
+
+
+
+### Получение списка тэгов пользователя
+
+```
+GET: api/hobby/
+```
+
+```
+Authorization: Bearer <access_token>
+```
+
+Response (status 200):
+[
+"Программирование",
+"Спорт",
+"Музыка"
+]

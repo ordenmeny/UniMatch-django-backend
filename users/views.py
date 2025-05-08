@@ -25,6 +25,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+
 
 class UserByUniqCodeAPIView(RetrieveUpdateDestroyAPIView):
     queryset = get_user_model().objects.all()
@@ -83,14 +85,24 @@ class RegisterUserAPIView(CreateAPIView):
         user.is_active = True
 
         user.save()
-        refresh = RefreshToken.for_user(user)
-        access = refresh.access_token
+        refresh_token = RefreshToken.for_user(user)
+        access = refresh_token.access_token
 
-        return Response({
+        response = Response({
             'user': UserSerializer(user).data,
-            'refresh': str(refresh),
             'access': str(access)
         }, status=status.HTTP_201_CREATED)
+
+        response.set_cookie(
+            key='refresh_token',
+            value=str(refresh_token),
+            httponly=True,
+            secure=False,  # change on https
+            samesite='Lax',
+            max_age=24 * 60 * 60,
+        )
+
+        return response
 
 
 class GeneratePairsAPIView(ListCreateAPIView):
@@ -270,7 +282,52 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         except AuthenticationFailed:
             return Response({'error': 'Неверный email или пароль'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # validated_data = serializer.validated_data
-        # validated_data.pop('refresh')
+        validated_data = serializer.validated_data
+        refresh_token = validated_data.pop('refresh')
+        response = Response(serializer.validated_data, status=status.HTTP_200_OK)
 
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+        response.set_cookie(
+            key='refresh_token',
+            value=refresh_token,
+            httponly=True,
+            secure=False,  # change on https
+            samesite='Lax',
+            max_age=24 * 60 * 60,
+        )
+
+        return response
+
+
+class RefreshTokenView(APIView):
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.COOKIES.get('refresh_token')
+
+        if refresh_token is None:
+            return Response({'error': 'Необходимо пройти авторизацию'},
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        serializer = TokenRefreshSerializer(data={'refresh': refresh_token})
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError as e:
+            return Response({'error': 'Необходимо пройти авторизацию'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        access = serializer.validated_data.get('access')
+        new_refresh = serializer.validated_data.get('refresh')
+
+        response = Response({'access': access}, status=status.HTTP_200_OK)
+        if new_refresh:
+            response.set_cookie(
+                key='refresh_token',
+                value=new_refresh,
+                httponly=True,
+                secure=False, # change on https
+                samesite='Lax',
+                max_age=24 * 60 * 60,
+            )
+
+        return response
+
+
+

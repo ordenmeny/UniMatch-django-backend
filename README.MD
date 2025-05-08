@@ -11,7 +11,7 @@
   "email": "почта@example.com",
   "first_name": "Имя",
   "last_name": "Фамилия",
-  "birth": "20-01-2000",
+  "birth": "2000-01-28",
   "password": "пароль",
   "hobby": [1, 2, 5]
 }
@@ -27,9 +27,10 @@ Response (status 201):
         "first_name": "Имя",
         "last_name": "Фамилия",
         "email": "email@example.com",
-        "birth": "02-03-2000",
+        "birth": "2000-01-28",
         "chat_id": null,
         "image": null,
+        !!!
         "hobby": [
             1,
             2,
@@ -41,13 +42,13 @@ Response (status 201):
 }
 ```
 
-Сохранить refresh и access токены на клиенте.
+Сохранить access токен на клиенте.
 
 Response (status 400):
-change !!!
+
 ```
 {
-    "error": "Пользователь с таким email уже существует.",
+    "error": "Пользователь с таким email уже существует."
 }
 ```
 
@@ -67,56 +68,47 @@ change !!!
   }
 ```
 
-Response (status 200): 
+Response (status 200):
+
 ```http
   {
-    "refresh": "<refresh_token>",
     "access": "<access_token>"
   }
 ```
-Необходимо сохранить refresh и access токены на клиенте.
 
-Ошибка 401 (неверный email или пароль):
+Необходимо сохранить access токен на клиенте.
+
+Ошибка 400:
+
 ```http
 {
-    "detail": "Неверный email или пароль"
+    "error": "Неверный email или пароль"
 }
 ```
-
 
 ### Обновление access-токен
 
 Условие, при котором необходимо обновить access-токен:
-если получен ответ с кодом 401 (при доступе к контенту и т.д), 
-но refresh-токен доступен.
-
-При запросе меняется не только access-токен, но и refresh-токен, поэтому на клиенте необходимо сохранить оба токена. 
+если получен ответ с кодом 401 (при доступе к контенту и т.д)/
 
 ```
 POST: api/token/refresh/
 ```
 
-```http
-{
-    "refresh": "<refresh_token>"
-}
-```
-
-
 Response (status 200):
+
 ```http
 {
     "access": "<access_token>",
-    "refresh": "<refresh_token>"
 }
 ```
 
-Если ошибка, то редирект на страницу с авторизацией.
-
+Если ошибка 401, то редирект на страницу с авторизацией.
 
 ### Получение текущего пользователя по JWT-токену
 
 ```
+!!!
 GET: api/auth/users/me/
 ```
 
@@ -125,12 +117,13 @@ Authorization: Bearer <access_token>
 ```
 
 Response (200):
+
 ```
 {
     "first_name": "Имя",
     "last_name": "Фамилия",
     "email": "user9@yandex.ru",
-    "birth": null,
+    "birth": "2000-08-12",
     "chat_id": null,
     "image": null,
     "hobby": [1, 2, 3]
@@ -138,38 +131,44 @@ Response (200):
 ```
 
 ### Выйти
+
 Отозвать refresh-токен и удалить access-токен на клиенте.
+
 ```
 POST: api/token/blacklist/
 ```
+
 ```
 {
     "refresh": "<refresh_token>"
 }
 ```
-   
+
 Response: 200
 
-
 ### Привязка в тг-боту
+
 ```
 POST: api/tg-auth/
 ```
+
 Пример использования:
 [Пример](https://github.com/ordenmeny/UniMatch-django-backend/blob/main/users/templates/users/tg_auth.html)
 
 Код успешного ответа: 201.
 
-
 ### Получение истории мэтчей текущего пользователя:
+
 ```
 GET: api/pairs/
 ```
+
 ```
 Authorization: Bearer <access_token>
 ```
 
 Response (status 200):
+
 ```
 [
     {
@@ -195,28 +194,14 @@ Response (status 200):
 ]
 ```
 
-### Получение списка тэгов пользователя
-```
-GET: api/hobby/
-```
-```
-Authorization: Bearer <access_token>
-```
-
-Response (status 200):
-[
-    "Программирование",
-    "Спорт",
-    "Музыка"
-]
-
-
 ### Получение списка тэгов
+
 ```
 GET: api/hobby/all/
 ```
 
 Response (status 200):
+
 ```
 [
     {
@@ -239,14 +224,17 @@ Response (status 200):
 ```
 
 ### Получение тэгов пользователя и всех тэгов в одном запросе
+
 ```
 GET: api/hobby/total/
 ```
+
 ```
 Authorization: Bearer <access_token>
 ```
 
 Response (status 200)
+
 ```
 {
     "user_tags": [
@@ -276,29 +264,14 @@ Response (status 200)
 }
 ```
 
-### Обновление тэгов
-```
-PATCH: api/hobby/
-```
-```
-Authorization: Bearer <access_token> 
-```
-```
-{
-    "hobby": [1, 2]
-}
-```
-
-Список [1, 2] - итоговые тэги пользователя.
-
-Response: status 200
-
 ### Дней до мэтча:
+
 ```
 GET: api/days-to-match/
 ```
 
 Response (status 200):
+
 ```
 {
     "days_left": 1, // полных дней до
@@ -309,32 +282,36 @@ Response (status 200):
 ```
 
 ### Обновление данных пользователя (в т.ч хобби)
+
 ```
 PATCH api/update/user/
 ```
+
 ```
 Authorization: Bearer <access_token> 
 ```
 
 Передаем только те данные, которые были изменены.
+
 ```
 {
   "first_name": "Дэн",
   "last_name": "Рейнолдс",
-  "birth": "05-06-2000",
+  "birth": "2000-01-28",
   "hobby": [1, 2, 7],
   "tg_link": "@user-dan"
 }
 ```
 
 Response (status 200):
+
 ```
 {
     "id": 59,
     "first_name": "Дэн",
     "last_name": "Рейнолдс",
     "email": "danraynolds16@example.com",
-    "birth": "05-06-2000",
+    "birth": "2000-01-28",
     "chat_id": null,
     "image": null,
     "hobby": [
@@ -346,3 +323,43 @@ Response (status 200):
 }
 ```
 
+### Запуск Django-проекта на локальной машине
+
+#### 1. Клонируйте репозиторий:
+```bash
+git clone <url_репозитория>
+cd <папка_проекта>
+```
+
+#### 2. Создайте и активируйте виртуальное окружение:
+###### Для Linux/MacOS:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+###### Для Windows:
+```bash
+python -m venv venv
+.\venv\Scripts\activate
+```
+#### 3. Установите зависимости:
+```bash
+pip install -r req.txt
+```
+
+#### 4. Настройте базу данных:
+```bash
+python manage.py makemigrations
+python manage.py migrate
+``` 
+
+#### 5. Создайте суперпользователя:
+```bash
+python manage.py createsuperuser
+```
+
+#### 6. Запустите сервер:
+```bash
+python manage.py runserver
+```
+##### Сервер будет доступен по адресу http://127.0.0.1:8000
