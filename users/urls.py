@@ -18,7 +18,6 @@ urlpatterns = [
     path('api/days-to-match/', DaysToMatch.as_view()),
     path('api/hobby/total/', HobbyTotal.as_view()),
     path('api/token/refresh/', RefreshTokenView.as_view()),
-
     # not api
     path('tg-btn-auth/', TemplateView.as_view(template_name='users/tg_auth.html')),
 ]

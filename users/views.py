@@ -322,12 +322,9 @@ class RefreshTokenView(APIView):
                 key='refresh_token',
                 value=new_refresh,
                 httponly=True,
-                secure=False, # change on https
+                secure=False,  # change on https
                 samesite='Lax',
                 max_age=24 * 60 * 60,
             )
 
         return response
-
-
-

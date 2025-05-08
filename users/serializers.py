@@ -5,7 +5,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
-import traceback
+
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
     username_field = 'email'
@@ -24,6 +24,7 @@ class UserSerializer(serializers.ModelSerializer):
         #     'invalid': 'Неправильный формат даты.'
         # }
     )
+    hobby = serializers.SerializerMethodField()
 
     class Meta:
         model = get_user_model()
@@ -46,6 +47,9 @@ class UserSerializer(serializers.ModelSerializer):
         user.save()
 
         return user
+
+    def get_hobby(self, obj):
+        return HobbySerializer(obj.hobby.all(), many=True).data
 
 
 class PairsSerializer(serializers.ModelSerializer):

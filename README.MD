@@ -30,12 +30,15 @@ Response (status 201):
         "birth": "2000-01-28",
         "chat_id": null,
         "image": null,
-        !!!
         "hobby": [
-            1,
-            2,
-            5
-        ]
+            {
+                "id": 1,
+                "name": "Программирование"
+            },
+            {
+                "id": 2,
+                "name": "Спорт"
+            }],
     },
     "refresh": "<refresh_token>",
     "access": "<access_token>"
@@ -108,7 +111,6 @@ Response (status 200):
 ### Получение текущего пользователя по JWT-токену
 
 ```
-!!!
 GET: api/auth/users/me/
 ```
 
@@ -126,7 +128,16 @@ Response (200):
     "birth": "2000-08-12",
     "chat_id": null,
     "image": null,
-    "hobby": [1, 2, 3]
+    "hobby": [
+        {
+            "id": 1,
+            "name": "Программирование"
+        },
+        {
+            "id": 2,
+            "name": "Спорт"
+        }
+    ]
 }
 ```
 
