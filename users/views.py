@@ -105,6 +105,18 @@ class RegisterUserAPIView(CreateAPIView):
         return response
 
 
+class CurrentPairAPIView(APIView):
+    serializer_class = UserSerializer
+
+    # Получение пары текущего пользователя
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+
+        cur_pair = PairsModel.objects.filter(is_archived=False).filter(
+            models.Q(user1=user) | models.Q(user2=user) | models.Q(user3=user)
+        )
+
+
 class GeneratePairsAPIView(ListCreateAPIView):
     serializer_class = PairsSerializer
     permission_classes = [IsAuthenticated]
@@ -117,8 +129,23 @@ class GeneratePairsAPIView(ListCreateAPIView):
             models.Q(user1=user) | models.Q(user2=user) | models.Q(user3=user)
         ).order_by('-created_at')
 
+        cur_pair = PairsModel.objects.filter(
+            is_archived=False
+        ).filter(
+            models.Q(user1=user) | models.Q(user2=user) | models.Q(user3=user)
+        ).order_by('-created_at').first()
+
+        all_pairs = list(pairs)
+        if cur_pair:
+            all_pairs.insert(0, cur_pair)
+
+
         serializer = self.get_serializer(pairs, many=True)
-        return Response(serializer.data)
+
+        return Response({
+            'current_pair': self.get_serializer(cur_pair).data if cur_pair else None,
+            'pairs': serializer.data
+        })
 
     def post(self, request, *args, **kwargs):
         all_pairs = PairsModel.objects.all()

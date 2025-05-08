@@ -12,6 +12,7 @@ urlpatterns = [
     path('api/user-by-chat-id/<str:chat_id>/', UserByChatIDAPIView.as_view()),
 
     path('api/pairs/', GeneratePairsAPIView.as_view()),
+    path('api/current/pair', CurrentPairAPIView.as_view()),
     path('api/tg-auth/', TgAuthView.as_view()),
     path('api/hobby/', HobbyAPIView.as_view()),
     path('api/hobby/all/', HobbyAllAPIView.as_view()),

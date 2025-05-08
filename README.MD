@@ -181,38 +181,82 @@ Authorization: Bearer <access_token>
 Response (status 200):
 
 ```
-[
-    {
-        "id": 222,
+{
+    "current_pair": {
+        "id": 228,
         "partner": {
-            "id": 35,
-            "first_name": "Александр",
-            "last_name": "Кожевников",
-            "email": "user4@yandex.ru",
+            "id": 45,
+            "first_name": "Имя",
+            "last_name": "Фамилия",
+            "email": "email@example.com",
             "hobby": [
+                {
+                    "id": 1,
+                    "name": "Программирование"
+                },
                 {
                     "id": 2,
                     "name": "Спорт"
                 },
                 {
-                    "id": 6,
-                    "name": "Литература"
+                    "id": 5,
+                    "name": "Рисование"
                 }
             ]
         },
-        "created_at": "2025-04-27"
+        "created_at": "2025-05-08"
     },
-    {
-        "id": 223,
-        "partner": {
-            "id": 31,
-            "first_name": "Дмитрий",
-            "last_name": "Александров",
-            "email": "admin@yandex.ru"
+    "pairs": [
+        {
+            "id": 225,
+            "partner": {
+                "id": 31,
+                "first_name": "Дмитрий",
+                "last_name": "Александров",
+                "email": "admin@yandex.ru",
+                "hobby": [
+                    {
+                        "id": 1,
+                        "name": "Программирование"
+                    },
+                    {
+                        "id": 2,
+                        "name": "Спорт"
+                    },
+                    {
+                        "id": 7,
+                        "name": "История"
+                    }
+                ]
+            },
+            "created_at": "2025-05-08"
         },
-        "created_at": "2025-04-27"
-    }
-]
+        {
+            "id": 226,
+            "partner": {
+                "id": 58,
+                "first_name": "Дэн",
+                "last_name": "Рейнолдс",
+                "email": "danraynolds15@example.com",
+                "hobby": [
+                    {
+                        "id": 1,
+                        "name": "Программирование"
+                    },
+                    {
+                        "id": 2,
+                        "name": "Спорт"
+                    },
+                    {
+                        "id": 5,
+                        "name": "Рисование"
+                    }
+                ]
+            },
+            "created_at": "2025-05-08"
+        }
+    ]
+}
 ```
 
 ### Получение списка тэгов
