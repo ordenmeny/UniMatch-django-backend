@@ -21,4 +21,5 @@ urlpatterns = [
     path('api/token/refresh/', RefreshTokenView.as_view()),
     # not api
     path('tg-btn-auth/', TemplateView.as_view(template_name='users/tg_auth.html')),
+
 ]

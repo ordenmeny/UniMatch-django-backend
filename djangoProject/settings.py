@@ -11,7 +11,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "abcdef")
 
 DEBUG = os.getenv("DEBUG", True)
 
-# !!!!! change or delete
+# !!!!! change on prod.
 TELEGRAM_BOT_TOKEN = "7852631020:AAGv3e97G8_OoJKlrKx2m97LM3iLwgI6c5c"
 
 ALLOWED_HOSTS = ["*"]

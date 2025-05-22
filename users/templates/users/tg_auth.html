@@ -15,16 +15,18 @@
 <script type="text/javascript">
   function onTelegramAuth(user) {
       const extendedData = {
+      {# Пользователь вошел в аккаунт. #}
+      {# user - объект пользователя телеграм. #}
+      {# передаем email пользователя сайта. #}
       ...user,
       email: "user_test@yandex.ru", // email из формы при регистрации. Пользователь уже должен быть создан.
     };
 
-    fetch("https://2160-95-164-87-45.ngrok-free.app/users/api/tg-auth/", {
+    fetch("https://user600096716-tdo2ryai.tunnel.vk-apps.com/api/tg-auth/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        {# Токен админа, хранить только в защищенном месте #}
-        "Authorization": "Token b74fcf715b641e919ba2a7f9157c24d344dcf222"
+        "Authorization": "Bearer access_token"
       },
       body: JSON.stringify(extendedData)
     }).then(response => response.text())

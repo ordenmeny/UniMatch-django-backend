@@ -199,7 +199,8 @@ class TgAuthView(APIView):
         data = request.data
 
         if not check_telegram_auth(data, settings.TELEGRAM_BOT_TOKEN):
-            return HttpResponseBadRequest("Invalid auth")
+            return HttpResponseBadRequest("Invalid auth",
+                                          status=status.HTTP_400_BAD_REQUEST)
 
         chat_id = data.get("id", "")
         email = data.get("email", "")
@@ -300,7 +301,7 @@ class UpdateUserAPIView(UpdateAPIView):
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
-    serializer_class = TokenObtainPairSerializer
+    serializer_class = EmailTokenObtainPairSerializer
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
