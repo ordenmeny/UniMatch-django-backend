@@ -2,6 +2,8 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 from datetime import timedelta
+from celery.schedules import crontab
+
 
 load_dotenv()
 
@@ -14,7 +16,11 @@ DEBUG = os.getenv("DEBUG", True)
 # !!!!! change on prod.
 TELEGRAM_BOT_TOKEN = "7852631020:AAGv3e97G8_OoJKlrKx2m97LM3iLwgI6c5c"
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'user600096716-fudu3arq.tunnel.vk-apps.com'
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -33,6 +39,7 @@ INSTALLED_APPS = [
     'drf_social_oauth2',
     'rest_framework_simplejwt.token_blacklist',
     'drf_yasg',
+    'django_celery_beat'
 ]
 
 MIDDLEWARE = [
@@ -123,10 +130,7 @@ AUTHENTICATION_BACKENDS = [
 LANGUAGE_CODE = 'ru'
 
 TIME_ZONE = 'Asia/Yekaterinburg'
-USE_TZ = True
-
 USE_I18N = True
-
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
@@ -158,11 +162,13 @@ REST_FRAMEWORK = {
 
 CORS_ALLOW_ALL_ORIGINS = True  # поменять!
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = [
-    "https://user283739440-4wofppag.tunnel.vk-apps.com",
-]
+# CSRF_TRUSTED_ORIGINS = [
+#     "https://user600096716-fudu3arq.tunnel.vk-apps.com",
+# ]
 
-# https://2160-95-164-87-45.ngrok-free.app/users/tg-btn-auth/
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
+
 
 
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
@@ -220,3 +226,8 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
     # "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
 }
+
+# CELERY_BROKER_URL = 'redis://localhost:6379/0'
+# CELERY_ACCEPT_CONTENT = ['json']
+# CELERY_TASK_SERIALIZER = 'json'
+# CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
