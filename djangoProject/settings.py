@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 from datetime import timedelta
+import sys
 
 load_dotenv()
 
@@ -33,6 +34,8 @@ INSTALLED_APPS = [
     'drf_social_oauth2',
     'rest_framework_simplejwt.token_blacklist',
     'drf_yasg',
+    'django_celery_results',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -109,13 +112,11 @@ AUTH_PASSWORD_VALIDATORS = [
     # },
 ]
 
-
 AUTHENTICATION_BACKENDS = [
     "djangoProject.auth_backends.EmailAuthBackend",
     "django.contrib.auth.backends.AllowAllUsersModelBackend",
     'social_core.backends.telegram.TelegramAuth',
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
@@ -124,10 +125,7 @@ LANGUAGE_CODE = 'ru'
 
 TIME_ZONE = 'Asia/Yekaterinburg'
 USE_TZ = True
-
 USE_I18N = True
-
-USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
@@ -140,7 +138,6 @@ if os.getenv("DOCKER_PROJECT"):
     STATIC_ROOT = '/vol/web/static'
 else:
     MEDIA_ROOT = BASE_DIR / 'media_dev'
-
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -155,14 +152,11 @@ REST_FRAMEWORK = {
     ]
 }
 
-
 CORS_ALLOW_ALL_ORIGINS = True  # поменять!
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
-    "https://user283739440-4wofppag.tunnel.vk-apps.com",
+    "https://user600096716-fudu3arq.tunnel.vk-apps.com"
 ]
-
-# https://2160-95-164-87-45.ngrok-free.app/users/tg-btn-auth/
 
 
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
@@ -181,7 +175,7 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 
-    "ROTATE_REFRESH_TOKENS": True, # выдается новый refresh-токен
+    "ROTATE_REFRESH_TOKENS": True,  # выдается новый refresh-токен
     "BLACKLIST_AFTER_ROTATION": True,  # старый refresh-токен автоматически добавляется в blacklist и больше не работает
 
     "UPDATE_LAST_LOGIN": False,
@@ -220,3 +214,36 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
     # "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
 }
+
+# CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# SECURE_SSL_REDIRECT = True
+
+TESTING = 'test' in sys.argv
+TESTING = TESTING or 'test_coverage' in sys.argv or 'pytest' in sys.modules
+
+CELERY = {
+    'broker_url': 'redis://localhost:6379/0',  # URL брокера сообщений
+    'task_always_eager': TESTING,  # Синхронное выполнение задач при тестировании
+    'timezone': TIME_ZONE,  # Временная зона для планировщика
+    'result_backend': 'django-db',  # для отображения результатов через админку django
+    'result_extended': True,
+    'task_track_started': True,  # Статус started для задач.
+    'beat_scheduler': 'django_celery_beat.schedulers:DatabaseScheduler'
+}
+
+
+# CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SAMESITE = 'None'  # Важно для кросс-доменных запросов
+# SESSION_COOKIE_SAMESITE = 'None'  # Важно для кросс-доменных запросов
+
+# Настройки прокси
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# USE_X_FORWARDED_HOST = True
+# USE_X_FORWARDED_PORT = True
+# SESSION_COOKIE_DOMAIN = '.tunnel.vk-apps.com'  # может помочь
+# CSRF_COOKIE_DOMAIN = '.tunnel.vk-apps.com'
+
+# admin@yandex.ru

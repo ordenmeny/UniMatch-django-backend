@@ -97,7 +97,7 @@ class RegisterUserAPIView(CreateAPIView):
             key='refresh_token',
             value=str(refresh_token),
             httponly=True,
-            secure=False,  # change on https
+            secure=True,  # change on https
             samesite='Lax',
             max_age=24 * 60 * 60,
         )
@@ -320,7 +320,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             key='refresh_token',
             value=refresh_token,
             httponly=True,
-            secure=False,  # change on https
+            secure=True,  # change on https
             samesite='Lax',
             max_age=24 * 60 * 60,
         )
@@ -352,7 +352,7 @@ class RefreshTokenView(APIView):
                 key='refresh_token',
                 value=new_refresh,
                 httponly=True,
-                secure=False,  # change on https
+                secure=True,  # change on https
                 samesite='Lax',
                 max_age=24 * 60 * 60,
             )
