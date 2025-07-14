@@ -11,7 +11,6 @@ SECRET_KEY = os.getenv("SECRET_KEY", "abcdef")
 
 DEBUG = os.getenv("DEBUG", True)
 
-# !!!!! change on prod.
 TELEGRAM_BOT_TOKEN = "7852631020:AAGv3e97G8_OoJKlrKx2m97LM3iLwgI6c5c"
 
 ALLOWED_HOSTS = ["*"]
@@ -28,11 +27,10 @@ INSTALLED_APPS = [
     'djoser',
     'rest_framework.authtoken',
     "corsheaders",
-    'oauth2_provider',
-    'social_django',
-    'drf_social_oauth2',
+    # 'oauth2_provider',
+    # 'social_django',
+    # 'drf_social_oauth2',
     'rest_framework_simplejwt.token_blacklist',
-    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -113,7 +111,7 @@ AUTH_PASSWORD_VALIDATORS = [
 AUTHENTICATION_BACKENDS = [
     "djangoProject.auth_backends.EmailAuthBackend",
     "django.contrib.auth.backends.AllowAllUsersModelBackend",
-    'social_core.backends.telegram.TelegramAuth',
+    # 'social_core.backends.telegram.TelegramAuth',
 ]
 
 
@@ -151,8 +149,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'drf_social_oauth2.authentication.SocialAuthentication',
-    ]
+        # 'drf_social_oauth2.authentication.SocialAuthentication',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 
@@ -161,8 +160,6 @@ CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     "https://user283739440-4wofppag.tunnel.vk-apps.com",
 ]
-
-# https://2160-95-164-87-45.ngrok-free.app/users/tg-btn-auth/
 
 
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"

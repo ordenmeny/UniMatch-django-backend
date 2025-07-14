@@ -9,15 +9,15 @@ from rest_framework_simplejwt.views import (
     TokenBlacklistView
 )
 
-from .schema import schema_view
+# from .schema import schema_view
 from users.views import CustomTokenObtainPairView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('users.urls')),
 
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0),
-         name='schema-swagger-ui'),
+    # path('swagger/', schema_view.with_ui('swagger', cache_timeout=0),
+    #      name='schema-swagger-ui'),
     # Simple JWT
     # path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/', CustomTokenObtainPairView.as_view(), name='login_token_custom'),

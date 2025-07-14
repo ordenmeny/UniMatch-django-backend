@@ -1,8 +1,15 @@
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views import View
-from rest_framework.generics import RetrieveAPIView, DestroyAPIView, UpdateAPIView, RetrieveUpdateDestroyAPIView, \
-    CreateAPIView, ListCreateAPIView, ListAPIView
+from rest_framework.generics import (
+    RetrieveAPIView,
+    DestroyAPIView,
+    UpdateAPIView,
+    RetrieveUpdateDestroyAPIView,
+    CreateAPIView,
+    ListCreateAPIView,
+    ListAPIView,
+)
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 
 from djangoProject import settings
@@ -31,8 +38,8 @@ from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 class UserByUniqCodeAPIView(RetrieveUpdateDestroyAPIView):
     queryset = get_user_model().objects.all()
     serializer_class = UserSerializer
-    lookup_field = 'uniq_code'
-    lookup_url_kwarg = 'uniq_code'
+    lookup_field = "uniq_code"
+    lookup_url_kwarg = "uniq_code"
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -41,17 +48,14 @@ class UserByUniqCodeAPIView(RetrieveUpdateDestroyAPIView):
 
         serializer = self.get_serializer(instance)
 
-        return Response({
-            "user": serializer.data,
-            "token": token.key
-        })
+        return Response({"user": serializer.data, "token": token.key})
 
 
 class UserByChatIDAPIView(RetrieveAPIView):
     queryset = get_user_model().objects.all()
     serializer_class = UserSerializer
-    lookup_field = 'chat_id'
-    lookup_url_kwarg = 'chat_id'
+    lookup_field = "chat_id"
+    lookup_url_kwarg = "chat_id"
     permission_classes = [IsAdminUser]
 
 
@@ -63,23 +67,25 @@ class RegisterUserAPIView(CreateAPIView):
         serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():
-            error_at_all = ''
+            error_at_all = ""
 
             for field, messages in serializer.errors.items():
-                if field == 'email':
+                if field == "email":
                     for message in messages:
-                        if message.code == 'unique':
-                            error_at_all += 'Пользователь с таким email уже существует.'
+                        if message.code == "unique":
+                            error_at_all += "Пользователь с таким email уже существует."
                             break
-                if field == 'password':
-                    error_at_all += 'Пароль либо слишком простой, либо содержит меньше 4 символов.'
-                if field == 'birth':
-                    error_at_all += 'Проблема с датой.'
+                if field == "password":
+                    error_at_all += (
+                        "Пароль либо слишком простой, либо содержит меньше 4 символов."
+                    )
+                if field == "birth":
+                    error_at_all += "Проблема с датой."
 
-                if error_at_all == '':
-                    error_at_all += 'Произошла непредвиденная ошибка.'
+                if error_at_all == "":
+                    error_at_all += "Произошла непредвиденная ошибка."
 
-            return Response({'error': error_at_all}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": error_at_all}, status=status.HTTP_400_BAD_REQUEST)
 
         user = serializer.save()
         user.is_active = True
@@ -88,17 +94,17 @@ class RegisterUserAPIView(CreateAPIView):
         refresh_token = RefreshToken.for_user(user)
         access = refresh_token.access_token
 
-        response = Response({
-            'user': UserSerializer(user).data,
-            'access': str(access)
-        }, status=status.HTTP_201_CREATED)
+        response = Response(
+            {"user": UserSerializer(user).data, "access": str(access)},
+            status=status.HTTP_201_CREATED,
+        )
 
         response.set_cookie(
-            key='refresh_token',
+            key="refresh_token",
             value=str(refresh_token),
             httponly=True,
             secure=False,  # change on https
-            samesite='Lax',
+            samesite="Lax",
             max_age=24 * 60 * 60,
         )
 
@@ -123,29 +129,33 @@ class GeneratePairsAPIView(ListCreateAPIView):
 
     def get(self, request, *args, **kwargs):
         user = self.request.user
-        pairs = PairsModel.objects.filter(
-            is_archived=True
-        ).filter(
-            models.Q(user1=user) | models.Q(user2=user) | models.Q(user3=user)
-        ).order_by('-created_at')
+        pairs = (
+            PairsModel.objects.filter(is_archived=True)
+            .filter(models.Q(user1=user) | models.Q(user2=user) | models.Q(user3=user))
+            .order_by("-created_at")
+        )
 
-        cur_pair = PairsModel.objects.filter(
-            is_archived=False
-        ).filter(
-            models.Q(user1=user) | models.Q(user2=user) | models.Q(user3=user)
-        ).order_by('-created_at').first()
+        cur_pair = (
+            PairsModel.objects.filter(is_archived=False)
+            .filter(models.Q(user1=user) | models.Q(user2=user) | models.Q(user3=user))
+            .order_by("-created_at")
+            .first()
+        )
 
         all_pairs = list(pairs)
         if cur_pair:
             all_pairs.insert(0, cur_pair)
 
-
         serializer = self.get_serializer(pairs, many=True)
 
-        return Response({
-            'current_pair': self.get_serializer(cur_pair).data if cur_pair else None,
-            'pairs': serializer.data
-        })
+        return Response(
+            {
+                "current_pair": self.get_serializer(cur_pair).data
+                if cur_pair
+                else None,
+                "pairs": serializer.data,
+            }
+        )
 
     def post(self, request, *args, **kwargs):
         all_pairs = PairsModel.objects.all()
@@ -171,7 +181,9 @@ class GeneratePairsAPIView(ListCreateAPIView):
             if len(i) == 2:
                 PairsModel.objects.create(user1=i[0], user2=i[1], is_archived=False)
             elif len(i) == 3:
-                PairsModel.objects.create(user1=i[0], user2=i[1], user3=i[2], is_archived=False)
+                PairsModel.objects.create(
+                    user1=i[0], user2=i[1], user3=i[2], is_archived=False
+                )
 
         # [(<CustomUser: user6>, <CustomUser: user9>), (<CustomUser: admin>, <CustomUser: user7>, <CustomUser: user8>)]
 
@@ -186,21 +198,20 @@ class GeneratePairsAPIView(ListCreateAPIView):
                     [pair[0].id, pair[1].id, pair[2].id],
                 )
 
-        return Response({
-            "pairs": formatted_pairs
-        }, status=status.HTTP_201_CREATED)
+        return Response({"pairs": formatted_pairs}, status=status.HTTP_201_CREATED)
 
 
 # Перед использованием:
 # Зайти в botfather, выбрать бота, отправить хост.
-@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(csrf_exempt, name="dispatch")
 class TgAuthView(APIView):
     def post(self, request, *args, **kwargs):
         data = request.data
 
         if not check_telegram_auth(data, settings.TELEGRAM_BOT_TOKEN):
-            return HttpResponseBadRequest("Invalid auth",
-                                          status=status.HTTP_400_BAD_REQUEST)
+            return HttpResponseBadRequest(
+                "Invalid auth", status=status.HTTP_400_BAD_REQUEST
+            )
 
         chat_id = data.get("id", "")
         email = data.get("email", "")
@@ -211,14 +222,14 @@ class TgAuthView(APIView):
             user_by_email.chat_id = chat_id
             user_by_email.save()
 
-        return Response({'user_data': data}, status=status.HTTP_201_CREATED)
+        return Response({"user_data": data}, status=status.HTTP_201_CREATED)
 
 
 class HobbyAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        hobbies = request.user.hobby.all().values_list('name', flat=True)
+        hobbies = request.user.hobby.all().values_list("name", flat=True)
         return Response(list(hobbies), status=status.HTTP_200_OK)
 
     def patch(self, request, *args, **kwargs):
@@ -257,16 +268,18 @@ class DaysToMatch(APIView):
             if now.time() >= match_time:
                 days_ahead = 7  # Уже позже 10:00 — ждём следующий понедельник
 
-        next_match_datetime = datetime.combine(now.date() + timedelta(days=days_ahead), match_time)
+        next_match_datetime = datetime.combine(
+            now.date() + timedelta(days=days_ahead), match_time
+        )
 
         # Разница между сейчас и следующим мэтчем
         delta = next_match_datetime - now
 
         response_data = {
-            'days_left': delta.days,
-            'hours_left': delta.seconds // 3600,
-            'minutes_left': (delta.seconds % 3600) // 60,
-            'next_match_at': next_match_datetime.strftime('%Y-%m-%d %H:%M:%S'),
+            "days_left": delta.days,
+            "hours_left": delta.seconds // 3600,
+            "minutes_left": (delta.seconds % 3600) // 60,
+            "next_match_at": next_match_datetime.strftime("%Y-%m-%d %H:%M:%S"),
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -281,13 +294,10 @@ class HobbyTotal(APIView):
         user_tags = user.hobby.all()
         all_tags = HobbyModel.objects.all()
 
-        user_tags_data = [{'id': tag.id, 'name': tag.name} for tag in user_tags]
-        all_tags_data = [{'id': tag.id, 'name': tag.name} for tag in all_tags]
+        user_tags_data = [{"id": tag.id, "name": tag.name} for tag in user_tags]
+        all_tags_data = [{"id": tag.id, "name": tag.name} for tag in all_tags]
 
-        response_data = {
-            'user_tags': user_tags_data,
-            'all_tags': all_tags_data
-        }
+        response_data = {"user_tags": user_tags_data, "all_tags": all_tags_data}
 
         return Response(response_data)
 
@@ -310,18 +320,21 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         try:
             serializer.is_valid(raise_exception=True)
         except AuthenticationFailed:
-            return Response({'error': 'Неверный email или пароль'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Неверный email или пароль"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         validated_data = serializer.validated_data
-        refresh_token = validated_data.pop('refresh')
+        refresh_token = validated_data.pop("refresh")
         response = Response(serializer.validated_data, status=status.HTTP_200_OK)
 
         response.set_cookie(
-            key='refresh_token',
+            key="refresh_token",
             value=refresh_token,
             httponly=True,
             secure=False,  # change on https
-            samesite='Lax',
+            samesite="Lax",
             max_age=24 * 60 * 60,
         )
 
@@ -330,30 +343,35 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 class RefreshTokenView(APIView):
     def post(self, request, *args, **kwargs):
-        refresh_token = request.COOKIES.get('refresh_token')
+        refresh_token = request.COOKIES.get("refresh_token")
 
         if refresh_token is None:
-            return Response({'error': 'Необходимо пройти авторизацию'},
-                            status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Необходимо пройти авторизацию"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
-        serializer = TokenRefreshSerializer(data={'refresh': refresh_token})
+        serializer = TokenRefreshSerializer(data={"refresh": refresh_token})
 
         try:
             serializer.is_valid(raise_exception=True)
         except TokenError as e:
-            return Response({'error': 'Необходимо пройти авторизацию'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Необходимо пройти авторизацию"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
-        access = serializer.validated_data.get('access')
-        new_refresh = serializer.validated_data.get('refresh')
+        access = serializer.validated_data.get("access")
+        new_refresh = serializer.validated_data.get("refresh")
 
-        response = Response({'access': access}, status=status.HTTP_200_OK)
+        response = Response({"access": access}, status=status.HTTP_200_OK)
         if new_refresh:
             response.set_cookie(
-                key='refresh_token',
+                key="refresh_token",
                 value=new_refresh,
                 httponly=True,
                 secure=False,  # change on https
-                samesite='Lax',
+                samesite="Lax",
                 max_age=24 * 60 * 60,
             )
 
