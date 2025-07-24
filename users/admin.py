@@ -6,11 +6,11 @@ from .models import *
 
 
 class CustomUserAdmin(UserAdmin):
-    list_display = ('username', 'email', 'chat_id', 'first_name', 'last_name')
+    list_display = ('username', 'email', 'is_active_pair')
     list_display_links = ('username', 'email')
-    list_editable = ('chat_id', 'first_name', 'last_name')
+    # list_editable = ('chat_id', )
 
-    fields_to_set = ("first_name", "last_name", "email", "image", "hobby", 'birth')
+    fields_to_set = ("email", "image", "hobby", 'birth', 'is_active_pair', 'first_name', 'last_name')
     fieldsets = (
         (None, {"fields": ("username", "password")}),
         (_("Personal info"), {"fields": fields_to_set}),
@@ -34,8 +34,8 @@ admin.site.register(get_user_model(), CustomUserAdmin)
 admin.site.register(HobbyModel)
 
 class PairsModelAdmin(admin.ModelAdmin):
-    list_display = ('user1', 'user2', 'user3', 'is_archived')
-    list_display_links = ('user1', 'user2', 'user3', 'is_archived')
+    list_display = ('user1', 'user2', 'is_archived')
+    list_display_links = ('user1', 'user2', 'is_archived')
 
 admin.site.register(PairsModel, PairsModelAdmin)
 # admin.site.register(CurrentPairsModel)
