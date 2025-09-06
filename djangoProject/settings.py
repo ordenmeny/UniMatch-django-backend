@@ -80,7 +80,7 @@ if os.getenv("DOCKER_PROJECT"):
             "NAME": os.getenv("DB_NAME"),
             "USER": os.getenv("DB_USER"),
             "PASSWORD": os.getenv("DB_PASS"),
-            "PORT": "5432",
+            "PORT": "5432"
         }
     }
 else:
@@ -170,6 +170,7 @@ DJOSER = {
     "SERIALIZERS": {
         "user": "users.serializers.UserSerializer",
         "current_user": "users.serializers.UserSerializer",
+        # ??
         "token_create": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
     },
     "LOGIN_FIELD": "email",

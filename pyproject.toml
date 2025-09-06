@@ -22,3 +22,9 @@ dependencies = [
     "redis>=6.2.0",
     "ruff>=0.12.3",
 ]
+
+[dependency-groups]
+prod = [
+    "psycopg[binary]>=3.2.9",
+    "uwsgi>=2.0.30",
+]

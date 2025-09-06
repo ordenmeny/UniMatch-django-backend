@@ -1,27 +1,45 @@
-FROM python:3.12-bookworm
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
 
-WORKDIR /app
-
-ENV PYTHONUNBUFFERED=1
+WORKDIR /djangoapp
 
 EXPOSE 8000
 
-COPY . .
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+ENV UV_TOOL_BIN_DIR=/usr/local/bin
+ENV PATH="/djangoapp/.venv/bin:$PATH"
 
-ENV PATH="/app:/django_venv/bin:$PATH"
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    postgresql-client \
+    libpq-dev \
+    libssl-dev \
+    libpq5 \
+    build-essential && \
 
-
-RUN python -m venv /django_venv && \
-    apt-get update && \
-    apt-get install -y postgresql-client && \
-    apt-get install -y libpq-dev && \
-    apt-get install -y build-essential && \
-    pip install --upgrade pip && \
-    pip install --no-cache-dir -r req.txt && \
-    pip install "psycopg[c]" && \
     mkdir -p /vol/web/media && \
     mkdir -p /vol/web/static && \
-    chmod +x /app/run_uwsgi.sh
+    rm -rf /var/lib/apt/lists/*
 
+COPY ./pyproject.toml ./uv.lock ./
 
-CMD ["run_uwsgi.sh"]
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --group prod
+
+COPY . /djangoapp
+
+RUN addgroup --system django && \
+    adduser --system --ingroup django --home /djangoapp django && \
+    chown -R django:django /djangoapp && \
+    chmod +x /djangoapp/run_uwsgi.sh && \
+    chown -R django:django /vol
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --group prod
+
+USER django
+
+ENTRYPOINT []
+CMD ["./run_uwsgi.sh"]

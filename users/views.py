@@ -330,11 +330,12 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         response = Response(serializer.validated_data, status=status.HTTP_200_OK)
 
         response.set_cookie(
+            # мб использовать session id?
             key="refresh_token",
             value=refresh_token,
             httponly=True,
             secure=False,  # change on https
-            samesite="Lax",
+            samesite="Lax",  # или Strict ?
             max_age=24 * 60 * 60,
         )
 
@@ -347,7 +348,10 @@ class RefreshTokenView(APIView):
 
         if refresh_token is None:
             return Response(
-                {"error": "Необходимо пройти авторизацию"},
+                {
+                    # редирект с frontend на страницу авторизации.
+                    "error": "Необходимо пройти авторизацию",
+                },
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
@@ -357,7 +361,10 @@ class RefreshTokenView(APIView):
             serializer.is_valid(raise_exception=True)
         except TokenError as e:
             return Response(
-                {"error": "Необходимо пройти авторизацию"},
+                {
+                    # например, если refresh истек.
+                    "error": "Необходимо пройти авторизацию",
+                },
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
