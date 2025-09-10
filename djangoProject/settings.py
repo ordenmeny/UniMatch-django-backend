@@ -9,6 +9,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("SECRET_KEY", "abcdef")
 
+yandex_client_id = os.getenv("YANDEX_CLIENT_ID")
+yandex_client_secret = os.getenv("YANDEX_CLIENT_SECRET")
+
 DEBUG = os.getenv("DEBUG", True)
 
 TELEGRAM_BOT_TOKEN = "7852631020:AAGv3e97G8_OoJKlrKx2m97LM3iLwgI6c5c"

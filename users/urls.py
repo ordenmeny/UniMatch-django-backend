@@ -18,6 +18,9 @@ urlpatterns = [
     path("api/days-to-match/", DaysToMatch.as_view()),
     path("api/hobby/total/", HobbyTotal.as_view()),
     path("api/token/refresh/", RefreshTokenView.as_view()),
+    path("api/auth/get_yandex_auth_url/", YandexAuthUrl.as_view()),
+    path("auth/yandex/verification_code/", YandexAuth.as_view()),
+    path("api/auth/users/me/httponly/", GetUserMeHttponly.as_view()),
     # not api
     path("tg-btn-auth/", TemplateView.as_view(template_name="users/tg_auth.html")),
 ]

@@ -10,6 +10,8 @@ from rest_framework.generics import (
     ListCreateAPIView,
     ListAPIView,
 )
+from django.shortcuts import redirect
+from django.http import HttpResponseRedirect
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 
 from djangoProject import settings
@@ -28,11 +30,169 @@ from users.utils.check_sign import check_telegram_auth
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from datetime import datetime, timedelta, time
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+import requests
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class GetUserMeHttponly(APIView):
+    def get(self, request):
+        # print("=== ВСЕ ЗАГОЛОВКИ ===")
+        # for header, value in request.META.items():
+        #     if 'COOKIE' in header or 'HTTP_' in header:
+        #         print(f"{header}: {value}")
+        #
+        # print(f"=== request.COOKIES ===")
+        # print(dict(request.COOKIES))
+        # return Response({"request.COOKIES": "yes"})
+
+        cookies_access_token = request.COOKIES.get('access_token')
+        print(cookies_access_token)
+
+        if not cookies_access_token:
+            print("Here...")
+            return Response(
+                {
+                    'error': 'Access token not found'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            token = AccessToken(cookies_access_token)
+            user_id = token.get('user_id')
+
+            user = get_user_model().objects.get(id=user_id)
+            serializer = UserSerializer(user)
+
+            print(serializer.data, '!!!')
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except TokenError as e:
+            return Response(
+                {
+                    'error': 'Необходимо пройти авторизацию'
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+
+class YandexAuthUrl(APIView):
+    def get(self, request):
+        client_id = settings.yandex_client_id
+        link = f"https://oauth.yandex.ru/authorize?response_type=code&client_id={client_id}"
+
+        return Response({"auth_url": link})
+
+class YandexAuth(APIView):
+    def get(self, request):
+        code = request.GET.get('code')
+
+        # Обмен кода подтверждения на OAuth-токен:
+        # яндекс OAuth возвращает
+        # OAuth-токен (access_token), refresh-токен и время их жизни в JSON-формате.
+        # Проверка на работоспособность сервера яндекса.
+        try:
+            tokens_response = requests.post(
+                "https://oauth.yandex.ru/token",
+                data={
+                    "grant_type": "authorization_code",
+                    "code": code,
+                    "client_id": settings.yandex_client_id,
+                    "client_secret": settings.yandex_client_secret,
+                }
+            )
+        except requests.RequestException as e:
+            logger.error(f"Ошибка сети при запросе токена: {e}")
+            return Response(
+                {
+                    "error": "Сервис авторизации недоступен"
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
+        # Если пришел ответ от яндекса, но статус не 200
+        if tokens_response.status_code != 200:
+            logger.warning(
+                f"Не удалось получить токен пользователя яндекса: {tokens_response.text}"
+            )
+            return Response(
+                {
+                    "error": "Не удалось получить токен пользователя яндекса"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+        tokens_data = tokens_response.json()
+        access_token = tokens_data.get("access_token")
+        # refresh_token = tokens_data.get("refresh_token")
+
+        if not access_token:
+            logger.error(f"В ответе Яндекса нет access_token")
+            return Response(
+                {
+                    "error": "Яндекс не вернул access_token"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user_data_response = requests.get(
+                "https://login.yandex.ru/info?",
+                headers={
+                    "Authorization": f'OAuth {access_token}'
+                }
+            )
+        except requests.RequestException as e:
+            logger.error(f"Ошибка сети при запросе данных пользователя: {e}")
+            return Response(
+                {
+                    "error": "Сервис авторизации недоступен"
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
+        if user_data_response.status_code != 200:
+            logger.warning(f"Ошибка получения данных пользователя яндекс")
+            return Response(
+                {
+                    "error": "Не удалось получить данные пользователя яндекс"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user_data_response = user_data_response.json()
+
+        # return redirect("http://localhost:5173")
+        # print(user_data_response, '!!!')
+
+        # Регистрируем или авторизируем пользователя и
+        # передаем в httponly access_token
+        # access_token = ...
+
+        # HttpResponseRedirect ???
+        response = HttpResponseRedirect("http://127.0.0.1:5173/me/")
+
+        response.set_cookie(
+            key="access_token",
+            # value=access_token,
+            value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU3NTQwMjg0LCJpYXQiOjE3NTc1MzkzODQsImp0aSI6IjYxNmM5ZmM1MzRiYjQyMzE5YzMwNTY1NzI5NjhlNWY4IiwidXNlcl9pZCI6MzF9.2hdmG2wQqvt2rfCUZFPtJezu1r-OIGyqs2XBPitudkM",
+            httponly=False,
+            secure=False,  # change on https
+            samesite="Lax",
+            max_age=24 * 60 * 60,
+        )
+
+        print(request.COOKIES.get('access_token'), '-->')
+
+        return response
 
 
 class UserByUniqCodeAPIView(RetrieveUpdateDestroyAPIView):
