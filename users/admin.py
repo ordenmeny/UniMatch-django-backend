@@ -6,8 +6,8 @@ from .models import *
 
 
 class CustomUserAdmin(UserAdmin):
-    list_display = ('username', 'email', 'is_active_pair')
-    list_display_links = ('username', 'email')
+    list_display = ('username', 'email', 'is_active_pair', 'yandex_oauth')
+    list_display_links = ('username', 'email', 'yandex_oauth')
     # list_editable = ('chat_id', )
 
     fields_to_set = ("email", "image", "hobby", 'birth', 'is_active_pair', 'first_name', 'last_name')

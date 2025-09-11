@@ -24,6 +24,7 @@ class CustomUser(AbstractUser):
     hobby = models.ManyToManyField("HobbyModel", verbose_name="Хобби", blank=True)
     tg_link = models.CharField(max_length=255, null=True, blank=True)
     is_active_pair = models.BooleanField(default=True)
+    yandex_oauth = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'  # email как уникальный идентификатор пользователя при логине.
     REQUIRED_FIELDS = ['username']  # Поля, которые обязательны при создании суперпользователя.

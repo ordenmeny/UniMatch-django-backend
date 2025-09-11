@@ -43,20 +43,11 @@ logger = logging.getLogger(__name__)
 
 class GetUserMeHttponly(APIView):
     def get(self, request):
-        # print("=== ВСЕ ЗАГОЛОВКИ ===")
-        # for header, value in request.META.items():
-        #     if 'COOKIE' in header or 'HTTP_' in header:
-        #         print(f"{header}: {value}")
-        #
-        # print(f"=== request.COOKIES ===")
-        # print(dict(request.COOKIES))
-        # return Response({"request.COOKIES": "yes"})
-
         cookies_access_token = request.COOKIES.get('access_token')
-        print(cookies_access_token)
+        # cookies_refresh_token = request.COOKIES.get('refresh_token')
 
         if not cookies_access_token:
-            print("Here...")
+            logger.warning("Cookies access token not found")
             return Response(
                 {
                     'error': 'Access token not found'
@@ -68,10 +59,9 @@ class GetUserMeHttponly(APIView):
             token = AccessToken(cookies_access_token)
             user_id = token.get('user_id')
 
-            user = get_user_model().objects.get(id=user_id)
+            user = get_user_model().objects.get(pk=user_id)
             serializer = UserSerializer(user)
 
-            print(serializer.data, '!!!')
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         except TokenError as e:
@@ -159,6 +149,8 @@ class YandexAuth(APIView):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
 
+        print(f"Data {user_data_response}")
+
         if user_data_response.status_code != 200:
             logger.warning(f"Ошибка получения данных пользователя яндекс")
             return Response(
@@ -169,28 +161,72 @@ class YandexAuth(APIView):
             )
 
         user_data_response = user_data_response.json()
+        print(f"JSON_Data: {type(user_data_response)}")
 
-        # return redirect("http://localhost:5173")
-        # print(user_data_response, '!!!')
+        all_user_yandex_emails = user_data_response.get("emails")
+        print(f'All_emails: {all_user_yandex_emails}')
+        user_by_yandex_email = None
+        user_yandex_email = None
 
-        # Регистрируем или авторизируем пользователя и
-        # передаем в httponly access_token
-        # access_token = ...
+        if len(all_user_yandex_emails) == 0:
+            return Response(
+                {
+                    "error": "Произошла ошибка получения почты пользователя"
+                }, status=status.HTTP_400_BAD_REQUEST
+            )
+        elif len(all_user_yandex_emails) == 1:
+            user_yandex_email = all_user_yandex_emails[0]
+            user_by_yandex_email = get_user_model().objects.get(
+                email=user_yandex_email,
+                yandex_oauth=True
+            )
+        elif len(all_user_yandex_emails) == 2:
+            user_yandex_email = all_user_yandex_emails[1]
+            user_by_yandex_email = get_user_model().objects.get(
+                email=user_yandex_email,
+                yandex_oauth=True
+            )
 
-        # HttpResponseRedirect ???
+
+        # Если уже входил через яндекс (почта 1/почта 2).
+        if user_by_yandex_email:
+            pass
+        # Если не входил ни разу -> создать пользователя
+        else:
+            user_by_yandex_email = get_user_model().objects.create(
+                username=user_yandex_email.split("@")[0],
+                email=user_yandex_email,
+                birth="2000-08-12",
+                yandex_oauth=True,
+                first_name=user_data_response.get("first_name"),
+                last_name=user_data_response.get("last_name"),
+                # image=....
+            )
+
+        # На основе созданного пользователя создаем access и refresh токены.
+        print(f"Yandex_email: {user_by_yandex_email}")
+        refresh_token = RefreshToken.for_user(user_by_yandex_email)
+        print(f"Refresh_token: {refresh_token}")
+        access_token = refresh_token.access_token
+
         response = HttpResponseRedirect("http://127.0.0.1:5173/me/")
 
         response.set_cookie(
             key="access_token",
-            # value=access_token,
-            value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU3NTQwMjg0LCJpYXQiOjE3NTc1MzkzODQsImp0aSI6IjYxNmM5ZmM1MzRiYjQyMzE5YzMwNTY1NzI5NjhlNWY4IiwidXNlcl9pZCI6MzF9.2hdmG2wQqvt2rfCUZFPtJezu1r-OIGyqs2XBPitudkM",
-            httponly=False,
+            value=access_token,
+            httponly=True,
             secure=False,  # change on https
             samesite="Lax",
             max_age=24 * 60 * 60,
         )
-
-        print(request.COOKIES.get('access_token'), '-->')
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=False,  # change on https
+            samesite="Lax",
+            max_age=24 * 60 * 60,
+        )
 
         return response
 
