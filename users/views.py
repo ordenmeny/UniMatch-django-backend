@@ -190,6 +190,15 @@ class YandexAuth(APIView):
             pass
         # Если не входил ни разу -> создать пользователя
         else:
+            if get_user_model().objects.filter(
+                email=user_yandex_email,
+                yandex_oauth=False
+            ):
+                return Response({
+                    "error": "Чтобы войти, используйте почту."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+
             user_by_yandex_email = get_user_model().objects.create(
                 username=user_yandex_email.split("@")[0],
                 email=user_yandex_email,
