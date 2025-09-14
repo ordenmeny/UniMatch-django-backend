@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 from datetime import timedelta
+from .utils import str_to_bool
 
 load_dotenv()
 
@@ -12,7 +13,10 @@ SECRET_KEY = os.getenv("SECRET_KEY", "abcdef")
 yandex_client_id = os.getenv("YANDEX_CLIENT_ID")
 yandex_client_secret = os.getenv("YANDEX_CLIENT_SECRET")
 
-DEBUG = os.getenv("DEBUG", True)
+# Например, unimatch.ru
+frontend_host = os.getenv("FRONTEND_HOST")
+
+DEBUG = str_to_bool(os.getenv("DEBUG", "True"))
 
 TELEGRAM_BOT_TOKEN = "7852631020:AAGv3e97G8_OoJKlrKx2m97LM3iLwgI6c5c"
 
@@ -75,7 +79,7 @@ WSGI_APPLICATION = "djangoProject.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-if os.getenv("DOCKER_PROJECT"):
+if str_to_bool(os.getenv("DOCKER_PROJECT")):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
@@ -138,7 +142,7 @@ USE_TZ = True
 STATIC_URL = "/static/"
 MEDIA_URL = "/media/"
 
-if os.getenv("DOCKER_PROJECT"):
+if str_to_bool(os.getenv("DOCKER_PROJECT")):
     MEDIA_ROOT = "/vol/web/media"
     STATIC_ROOT = "/vol/web/static"
 else:
@@ -158,24 +162,6 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
-
-frontend_host = "76b10f61017f7cd0b105d35e97b5f813.serveo.net"
-CORS_ALLOW_CREDENTIALS = True  # разрешаем куки
-CORS_ALLOWED_ORIGINS = [
-    f"https://{frontend_host}",
-]
-
-# === CSRF ===
-CSRF_TRUSTED_ORIGINS = [
-    f"https://{frontend_host}",
-]
-
-# === Куки (важно для кросс-домена) ===
-SESSION_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_SECURE = True
-
-CSRF_COOKIE_SAMESITE = "None"
-CSRF_COOKIE_SECURE = True
 
 
 # SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
@@ -226,3 +212,27 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
     # "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
 }
+
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    frontend_host
+]
+
+# === CSRF ===
+CSRF_TRUSTED_ORIGINS = [
+    frontend_host
+]
+
+
+if str_to_bool(os.getenv("DOCKER_PROJECT")):
+    SECURE_HTTP_ONLY = True
+else:
+    SECURE_HTTP_ONLY = False
+# === Куки (важно для кросс-домена) ===
+# SESSION_COOKIE_SAMESITE = "None"
+# SESSION_COOKIE_SECURE = True
+#
+# CSRF_COOKIE_SAMESITE = "None"
+# CSRF_COOKIE_SECURE = True
+

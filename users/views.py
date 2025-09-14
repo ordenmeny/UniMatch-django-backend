@@ -41,12 +41,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class GetUserMeHttponly(APIView):
+class GetAccessTokenHttponly(APIView):
     def get(self, request):
-        print(f"set access_token: {request.COOKIES.get('access_token')}") # None
-
         cookies_access_token = request.COOKIES.get('access_token')
-        # cookies_refresh_token = request.COOKIES.get('refresh_token')
 
         if not cookies_access_token:
             logger.warning("Cookies access token not found")
@@ -58,13 +55,12 @@ class GetUserMeHttponly(APIView):
             )
 
         try:
-            token = AccessToken(cookies_access_token)
-            user_id = token.get('user_id')
+            access_token = AccessToken(cookies_access_token)
+            # user_id = access_token.get('user_id')
+            # user = get_user_model().objects.get(pk=user_id)
+            # serializer = UserSerializer(user)
 
-            user = get_user_model().objects.get(pk=user_id)
-            serializer = UserSerializer(user)
-
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({"access": str(access_token)}, status=status.HTTP_200_OK)
 
         except TokenError as e:
             return Response(
@@ -82,6 +78,8 @@ class YandexAuthUrl(APIView):
 
         return Response({"auth_url": link})
 
+
+# ! Обязательно поменять Redirect URI в настройках яндекс oauth: https://oauth.yandex.ru
 class YandexAuth(APIView):
     def get(self, request):
         code = request.GET.get('code')
@@ -151,8 +149,6 @@ class YandexAuth(APIView):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
 
-        print(f"Data {user_data_response}")
-
         if user_data_response.status_code != 200:
             logger.warning(f"Ошибка получения данных пользователя яндекс")
             return Response(
@@ -163,10 +159,8 @@ class YandexAuth(APIView):
             )
 
         user_data_response = user_data_response.json()
-        print(f"JSON_Data: {type(user_data_response)}")
 
         all_user_yandex_emails = user_data_response.get("emails")
-        print(f'All_emails: {all_user_yandex_emails}')
         user_by_yandex_email = None
         user_yandex_email = None
 
@@ -178,16 +172,17 @@ class YandexAuth(APIView):
             )
         elif len(all_user_yandex_emails) == 1:
             user_yandex_email = all_user_yandex_emails[0]
-            user_by_yandex_email = get_user_model().objects.get(
+
+            user_by_yandex_email = get_user_model().objects.filter(
                 email=user_yandex_email,
                 yandex_oauth=True
-            )
+            ).first()
         elif len(all_user_yandex_emails) == 2:
             user_yandex_email = all_user_yandex_emails[1]
-            user_by_yandex_email = get_user_model().objects.get(
+            user_by_yandex_email = get_user_model().objects.filter(
                 email=user_yandex_email,
                 yandex_oauth=True
-            )
+            ).first()
 
 
         # Если уже входил через яндекс (почта 1/почта 2).
@@ -205,34 +200,30 @@ class YandexAuth(APIView):
                 # image=....
             )
 
-        # На основе созданного пользователя создаем access и refresh токены.
-        print(f"Yandex_email: {user_by_yandex_email}")
         refresh_token = RefreshToken.for_user(user_by_yandex_email)
-        print(f"Refresh_token: {refresh_token}")
         access_token = refresh_token.access_token
 
         frontend_host = settings.frontend_host
 
-        response = HttpResponseRedirect(f"https://{frontend_host}/me/")
-        # response = Response({"new_info": "hello world"})
+        response = HttpResponseRedirect(f"{frontend_host}/me/")
 
         response.set_cookie(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=True,  # change on https
+            secure=settings.SECURE_HTTP_ONLY,
             samesite="Lax",
             max_age=24 * 60 * 60,
-            domain=".serveo.net",
+            path="/",
         )
         response.set_cookie(
             key="refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=True,  # set True on https
+            secure=settings.SECURE_HTTP_ONLY,
             samesite="Lax",
             max_age=24 * 60 * 60,
-            domain=".serveo.net",
+            path="/",
         )
 
         return response
@@ -306,7 +297,7 @@ class RegisterUserAPIView(CreateAPIView):
             key="refresh_token",
             value=str(refresh_token),
             httponly=True,
-            secure=False,  # change on https
+            secure=settings.SECURE_HTTP_ONLY,
             samesite="Lax",
             max_age=24 * 60 * 60,
         )
@@ -533,12 +524,11 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         response = Response(serializer.validated_data, status=status.HTTP_200_OK)
 
         response.set_cookie(
-            # мб использовать session id?
             key="refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=False,  # change on https
-            samesite="Lax",  # или Strict ?
+            secure=settings.SECURE_HTTP_ONLY,
+            samesite="Lax",
             max_age=24 * 60 * 60,
         )
 
@@ -565,7 +555,6 @@ class RefreshTokenView(APIView):
         except TokenError as e:
             return Response(
                 {
-                    # например, если refresh истек.
                     "error": "Необходимо пройти авторизацию",
                 },
                 status=status.HTTP_401_UNAUTHORIZED,
@@ -580,7 +569,7 @@ class RefreshTokenView(APIView):
                 key="refresh_token",
                 value=new_refresh,
                 httponly=True,
-                secure=False,  # change on https
+                secure=settings.SECURE_HTTP_ONLY,
                 samesite="Lax",
                 max_age=24 * 60 * 60,
             )
