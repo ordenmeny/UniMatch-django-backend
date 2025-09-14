@@ -43,6 +43,8 @@ logger = logging.getLogger(__name__)
 
 class GetUserMeHttponly(APIView):
     def get(self, request):
+        print(f"set access_token: {request.COOKIES.get('access_token')}") # None
+
         cookies_access_token = request.COOKIES.get('access_token')
         # cookies_refresh_token = request.COOKIES.get('refresh_token')
 
@@ -209,23 +211,28 @@ class YandexAuth(APIView):
         print(f"Refresh_token: {refresh_token}")
         access_token = refresh_token.access_token
 
-        response = HttpResponseRedirect("http://127.0.0.1:5173/me/")
+        frontend_host = settings.frontend_host
+
+        response = HttpResponseRedirect(f"https://{frontend_host}/me/")
+        # response = Response({"new_info": "hello world"})
 
         response.set_cookie(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=False,  # change on https
+            secure=True,  # change on https
             samesite="Lax",
             max_age=24 * 60 * 60,
+            domain=".serveo.net",
         )
         response.set_cookie(
             key="refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=False,  # change on https
+            secure=True,  # set True on https
             samesite="Lax",
             max_age=24 * 60 * 60,
+            domain=".serveo.net",
         )
 
         return response

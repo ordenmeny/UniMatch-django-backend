@@ -159,15 +159,26 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
-
-CORS_ALLOW_ALL_ORIGINS = True  # поменять!
-CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = [
-    "https://user283739440-4wofppag.tunnel.vk-apps.com",
+frontend_host = "76b10f61017f7cd0b105d35e97b5f813.serveo.net"
+CORS_ALLOW_CREDENTIALS = True  # разрешаем куки
+CORS_ALLOWED_ORIGINS = [
+    f"https://{frontend_host}",
 ]
 
+# === CSRF ===
+CSRF_TRUSTED_ORIGINS = [
+    f"https://{frontend_host}",
+]
 
-SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
+# === Куки (важно для кросс-домена) ===
+SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SECURE = True
+
+CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SECURE = True
+
+
+# SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
 
 DJOSER = {
     "SERIALIZERS": {
