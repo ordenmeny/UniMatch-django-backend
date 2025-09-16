@@ -32,13 +32,47 @@ from django.utils.decorators import method_decorator
 from datetime import datetime, timedelta, time
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.exceptions import ValidationError
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenBlacklistView
+)
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 import requests
 import logging
 
+from rest_framework_simplejwt.serializers import TokenBlacklistSerializer
+
 logger = logging.getLogger(__name__)
+
+
+class CustomTokenBlacklistView(TokenBlacklistView):
+    serializer_class = TokenBlacklistSerializer
+
+    def post(self, request, *args, **kwargs):
+        cookies_refresh_token = request.COOKIES.get('refresh_token')
+
+        serializer = self.get_serializer(data={"refresh": cookies_refresh_token})
+
+        if serializer.is_valid():
+            response = Response(
+                {
+                    "signout": "Вы вышли из системы"
+                }, status=status.HTTP_200_OK
+            )
+
+            response.delete_cookie(
+                key="refresh_token",
+                path="/",
+                samesite="Lax"
+            )
+
+            return response
+
+
+        return Response({
+            "error": "Не получилось выйти из системы"
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GetAccessTokenHttponly(APIView):
@@ -119,7 +153,6 @@ class YandexAuth(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-
         tokens_data = tokens_response.json()
         access_token = tokens_data.get("access_token")
         # refresh_token = tokens_data.get("refresh_token")
@@ -184,20 +217,18 @@ class YandexAuth(APIView):
                 yandex_oauth=True
             ).first()
 
-
         # Если уже входил через яндекс (почта 1/почта 2).
         if user_by_yandex_email:
             pass
         # Если не входил ни разу -> создать пользователя
         else:
             if get_user_model().objects.filter(
-                email=user_yandex_email,
-                yandex_oauth=False
+                    email=user_yandex_email,
+                    yandex_oauth=False
             ):
                 return Response({
-                    "error": "Чтобы войти, используйте почту."
+                    "error": "Чтобы войти, используйте почту"
                 }, status=status.HTTP_400_BAD_REQUEST)
-
 
             user_by_yandex_email = get_user_model().objects.create(
                 username=user_yandex_email.split("@")[0],
@@ -270,35 +301,40 @@ class RegisterUserAPIView(CreateAPIView):
         serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():
-            error_at_all = ""
-
             for field, messages in serializer.errors.items():
                 if field == "email":
                     for message in messages:
                         if message.code == "unique":
-                            error_at_all += "Пользователь с таким email уже существует."
-                            break
+                            return Response({
+                                "error": "Пользователь с таким email уже существует"
+                            }, status=status.HTTP_400_BAD_REQUEST)
+                        if message.code == "invalid":
+                            return Response({
+                                "error": "Введите правильный адрес электронной почты"
+                            }, status=status.HTTP_400_BAD_REQUEST)
                 if field == "password":
-                    error_at_all += (
-                        "Пароль либо слишком простой, либо содержит меньше 4 символов."
-                    )
+                    return Response({
+                        "error": "Пароль либо слишком простой, либо содержит меньше 4 символов"
+                    }, status=status.HTTP_400_BAD_REQUEST)
                 if field == "birth":
-                    error_at_all += "Проблема с датой."
+                    return Response({
+                        "error": "Проблема с полем ввода даты рождения"
+                    }, status=status.HTTP_400_BAD_REQUEST)
 
-                if error_at_all == "":
-                    error_at_all += "Произошла непредвиденная ошибка."
-
-            return Response({"error": error_at_all}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({
+                    "error": "Произошла непредвиденная ошибка"
+                }, status=status.HTTP_400_BAD_REQUEST)
 
         user = serializer.save()
-        user.is_active = True
 
-        user.save()
         refresh_token = RefreshToken.for_user(user)
         access = refresh_token.access_token
 
         response = Response(
-            {"user": UserSerializer(user).data, "access": str(access)},
+            {
+                "user": UserSerializer(user).data,
+                "access": str(access)
+            },
             status=status.HTTP_201_CREATED,
         )
 
@@ -529,8 +565,9 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             )
 
         validated_data = serializer.validated_data
+        access_token = validated_data.get("access")
         refresh_token = validated_data.pop("refresh")
-        response = Response(serializer.validated_data, status=status.HTTP_200_OK)
+        response = Response({"access": access_token}, status=status.HTTP_200_OK)
 
         response.set_cookie(
             key="refresh_token",
