@@ -58,8 +58,8 @@ class PairsSerializer(serializers.ModelSerializer):
             partner = obj.user1
         if obj.user2 and obj.user2 != current_user:
             partner = obj.user2
-        if obj.user3 and obj.user3 != current_user:
-            partner = obj.user3
+        # if obj.user3 and obj.user3 != current_user:
+        #     partner = obj.user3
 
         partner_data = {
             'id': partner.id,

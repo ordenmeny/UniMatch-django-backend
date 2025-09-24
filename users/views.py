@@ -357,7 +357,7 @@ class CurrentPairAPIView(APIView):
         user = self.request.user
 
         cur_pair = PairsModel.objects.filter(is_archived=False).filter(
-            models.Q(user1=user) | models.Q(user2=user) | models.Q(user3=user)
+            models.Q(user1=user) | models.Q(user2=user)
         )
 
 
@@ -369,13 +369,13 @@ class GeneratePairsAPIView(ListCreateAPIView):
         user = self.request.user
         pairs = (
             PairsModel.objects.filter(is_archived=True)
-            .filter(models.Q(user1=user) | models.Q(user2=user) | models.Q(user3=user))
+            .filter(models.Q(user1=user) | models.Q(user2=user))
             .order_by("-created_at")
         )
 
         cur_pair = (
             PairsModel.objects.filter(is_archived=False)
-            .filter(models.Q(user1=user) | models.Q(user2=user) | models.Q(user3=user))
+            .filter(models.Q(user1=user) | models.Q(user2=user))
             .order_by("-created_at")
             .first()
         )
@@ -409,7 +409,7 @@ class GeneratePairsAPIView(ListCreateAPIView):
 
         past_pairs = set()
         for pair in PairsModel.objects.filter(is_archived=True):
-            users = [u for u in [pair.user1, pair.user2, pair.user3] if u is not None]
+            users = [u for u in [pair.user1, pair.user2] if u is not None]
             past_pairs.add(frozenset(users))
 
         pairs = generate_weekly_pairs(all_users, past_pairs)
@@ -420,7 +420,7 @@ class GeneratePairsAPIView(ListCreateAPIView):
                 PairsModel.objects.create(user1=i[0], user2=i[1], is_archived=False)
             elif len(i) == 3:
                 PairsModel.objects.create(
-                    user1=i[0], user2=i[1], user3=i[2], is_archived=False
+                    user1=i[0], user2=i[1], is_archived=False
                 )
 
         # [(<CustomUser: user6>, <CustomUser: user9>), (<CustomUser: admin>, <CustomUser: user7>, <CustomUser: user8>)]
