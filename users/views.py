@@ -11,7 +11,7 @@ from rest_framework.generics import (
     ListAPIView,
 )
 from django.shortcuts import redirect
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 
 from djangoProject import settings
@@ -68,7 +68,6 @@ class CustomTokenBlacklistView(TokenBlacklistView):
             )
 
             return response
-
 
         return Response({
             "error": "Не получилось выйти из системы"
@@ -442,26 +441,89 @@ class GeneratePairsAPIView(ListCreateAPIView):
 
 # Перед использованием:
 # Зайти в botfather, выбрать бота, отправить хост.
-@method_decorator(csrf_exempt, name="dispatch")
+# @method_decorator(csrf_exempt, name="dispatch")
 class TgAuthView(APIView):
     def post(self, request, *args, **kwargs):
+        print("Start!")
         data = request.data
+        print(data)
+
 
         if not check_telegram_auth(data, settings.TELEGRAM_BOT_TOKEN):
-            return HttpResponseBadRequest(
-                "Invalid auth", status=status.HTTP_400_BAD_REQUEST
+            return Response(
+                {"error": "Invalid tg auth"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        chat_id = data.get("id", "")
-        email = data.get("email", "")
+        chat_id = data.get("id")  # Всегда приходит
+        username = data.get('username')
+        first_name = data.get("first_name")
+        last_name = data.get("last_name")
+        email = f'unimatch_username_null_{chat_id}@unimatch.ru'
 
-        # Здесь же осуществлять логику добавления chat_id...
-        user_by_email = CustomUser.objects.get(email=email)
-        if user_by_email:
-            user_by_email.chat_id = chat_id
-            user_by_email.save()
+        exists_user = get_user_model().objects.filter(email=email)
+        if exists_user.exists():
+            refresh_token = RefreshToken.for_user(exists_user.first())
+            access_token = refresh_token.access_token
+            return Response({"access": str(access_token)}, status=status.HTTP_200_OK)
 
-        return Response({"user_data": data}, status=status.HTTP_201_CREATED)
+
+        if username:
+            new_user = get_user_model().objects.create(
+                username=username,
+                email=email,
+                chat_id=chat_id,
+                tg_auth=True,
+            )
+        elif first_name and last_name:
+            new_user = get_user_model().objects.create(
+                username=f'{first_name}{last_name}{chat_id}_unimatch_user',
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                chat_id=chat_id,
+                tg_auth=True,
+            )
+        elif first_name:
+            new_user = get_user_model().objects.create(
+                username=f'{first_name}{chat_id}_unimatch_user',
+                email=email,
+                first_name=first_name,
+                chat_id=chat_id,
+                tg_auth=True,
+            )
+
+        elif last_name:
+            new_user = get_user_model().objects.create(
+                username=f'{last_name}{chat_id}_unimatch_user',
+                email=email,
+                last_name=last_name,
+                chat_id=chat_id,
+                tg_auth=True,
+            )
+
+        refresh_token = RefreshToken.for_user(new_user)
+        access_token = refresh_token.access_token
+
+        response = Response({"access": str(access_token)}, status=status.HTTP_200_OK)
+
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=settings.SECURE_HTTP_ONLY,
+            samesite="Lax",
+            max_age=24 * 60 * 60,
+        )
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=settings.SECURE_HTTP_ONLY,
+            samesite="Lax",
+            max_age=24 * 60 * 60,
+        )
+
+        return response
 
 
 class HobbyAPIView(APIView):

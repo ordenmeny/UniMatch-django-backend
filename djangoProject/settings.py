@@ -18,7 +18,7 @@ frontend_host = os.getenv("FRONTEND_HOST")
 
 DEBUG = str_to_bool(os.getenv("DEBUG", "True"))
 
-TELEGRAM_BOT_TOKEN = "7852631020:AAGv3e97G8_OoJKlrKx2m97LM3iLwgI6c5c"
+TELEGRAM_BOT_TOKEN = "7852631020:AAHgv8NsR3YwunNgCSnYK_SQZhSZxbZLuPE"
 
 ALLOWED_HOSTS = ["*"]
 
@@ -219,6 +219,8 @@ CORS_ALLOWED_ORIGINS = [
     frontend_host
 ]
 
+CORS_ALLOW_ALL_ORIGINS = True
+
 # === CSRF ===
 CSRF_TRUSTED_ORIGINS = [
     frontend_host
@@ -228,7 +230,7 @@ CSRF_TRUSTED_ORIGINS = [
 if str_to_bool(os.getenv("DOCKER_PROJECT")):
     SECURE_HTTP_ONLY = True
 else:
-    SECURE_HTTP_ONLY = False
+    SECURE_HTTP_ONLY = True
 # === Куки (важно для кросс-домена) ===
 # SESSION_COOKIE_SAMESITE = "None"
 # SESSION_COOKIE_SECURE = True

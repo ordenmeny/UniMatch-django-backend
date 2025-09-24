@@ -66,6 +66,7 @@ class PairsSerializer(serializers.ModelSerializer):
             'first_name': partner.first_name,
             'last_name': partner.last_name,
             'email': partner.email,
+            "tg_link": partner.tg_link,
             'hobby': HobbySerializer(partner.hobby.all(), many=True).data
         }
 

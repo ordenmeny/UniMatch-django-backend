@@ -25,6 +25,7 @@ class CustomUser(AbstractUser):
     tg_link = models.CharField(max_length=255, null=True, blank=True)
     is_active_pair = models.BooleanField(default=True)
     yandex_oauth = models.BooleanField(default=False)
+    tg_auth = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
     USERNAME_FIELD = 'email'  # email как уникальный идентификатор пользователя при логине.
