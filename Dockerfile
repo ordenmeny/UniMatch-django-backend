@@ -30,16 +30,18 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 COPY . /djangoapp
 
-RUN addgroup --system django && \
-    adduser --system --ingroup django --home /djangoapp django && \
-    chown -R django:django /djangoapp && \
-    chmod +x /djangoapp/run_uwsgi.sh && \
-    chown -R django:django /vol
+# RUN addgroup --system django && \
+#     adduser --system --ingroup django --home /djangoapp django && \
+#     chown -R django:django /djangoapp && \
+#     chmod +x /djangoapp/run_uwsgi.sh && \
+#     chown -R django:django /vol && \
+#     chmod -R 755 /vol
+
+RUN chmod +x /djangoapp/run_uwsgi.sh
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --group prod
 
-USER django
 
 ENTRYPOINT []
 CMD ["./run_uwsgi.sh"]

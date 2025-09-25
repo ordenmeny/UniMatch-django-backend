@@ -391,7 +391,7 @@ class GeneratePairsAPIView(ListCreateAPIView):
                 "current_pair": self.get_serializer(cur_pair).data
                 if cur_pair
                 else None,
-                "pairs": serializer.data,
+                "pairs": serializer.data if serializer.data else [],
             }
         )
 

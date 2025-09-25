@@ -3,6 +3,7 @@
 set -e
 
 uv run manage.py wait_for_db
+uv run manage.py makemigrations
 uv run manage.py migrate
 uv run manage.py collectstatic --noinput
 
