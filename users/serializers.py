@@ -17,7 +17,13 @@ class UserSerializer(serializers.ModelSerializer):
     birth = serializers.DateField(
         required=False,
     )
-    hobby = serializers.SerializerMethodField()
+
+    hobby = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        allow_empty=True,
+        write_only=True
+    )
 
     class Meta:
         model = get_user_model()
@@ -42,6 +48,11 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(e.messages)
         return password
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["hobby"] = HobbySerializer(instance.hobby.all(), many=True).data
+        return data
+
     def create(self, validated_data):
         validated_data["username"] = validated_data["email"]
         password = validated_data.pop("password")
@@ -52,20 +63,17 @@ class UserSerializer(serializers.ModelSerializer):
 
         return user
 
-    def get_hobby(self, obj):
-        return HobbySerializer(obj.hobby.all(), many=True).data
-
     def update(self, instance, validated_data):
-        hobbies = validated_data.pop('hobby', None)
-
+        hobby_ids = validated_data.pop("hobby", None)
         instance = super().update(instance, validated_data)
+        print('hobby_ids:', hobby_ids)
 
-        if hobbies is not None:
+        if hobby_ids is not None:
+            hobbies = HobbyModel.objects.filter(pk__in=hobby_ids)
             instance.hobby.set(hobbies)
+            instance.save()
 
         return instance
-
-
 
 
 class PairsSerializer(serializers.ModelSerializer):
