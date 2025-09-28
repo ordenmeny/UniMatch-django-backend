@@ -8,11 +8,9 @@ from rest_framework_simplejwt.exceptions import AuthenticationFailed
 
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
-    username_field = 'email'
+    username_field = "email"
 
-    default_error_messages = {
-        "no_active_account": "Неверный email или пароль"
-    }
+    default_error_messages = {"no_active_account": "Неверный email или пароль"}
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -23,8 +21,19 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ['id', 'first_name', 'last_name', 'email', 'birth', 'chat_id', 'image', 'hobby', 'password', 'tg_link']
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = [
+            "id",
+            "first_name",
+            "last_name",
+            "email",
+            "birth",
+            "chat_id",
+            "image",
+            "hobby",
+            "password",
+            "tg_link",
+        ]
+        extra_kwargs = {"password": {"write_only": True}}
 
     def validate_password(self, password):
         try:
@@ -34,8 +43,8 @@ class UserSerializer(serializers.ModelSerializer):
         return password
 
     def create(self, validated_data):
-        validated_data['username'] = validated_data['email']
-        password = validated_data.pop('password')
+        validated_data["username"] = validated_data["email"]
+        password = validated_data.pop("password")
 
         user = super().create(validated_data)
         user.set_password(password)
@@ -46,13 +55,25 @@ class UserSerializer(serializers.ModelSerializer):
     def get_hobby(self, obj):
         return HobbySerializer(obj.hobby.all(), many=True).data
 
+    def update(self, instance, validated_data):
+        hobbies = validated_data.pop('hobby', None)
+
+        instance = super().update(instance, validated_data)
+
+        if hobbies is not None:
+            instance.hobby.set(hobbies)
+
+        return instance
+
+
+
 
 class PairsSerializer(serializers.ModelSerializer):
     partner = serializers.SerializerMethodField()
 
     def get_partner(self, obj):
         partner = None
-        current_user = self.context['request'].user
+        current_user = self.context["request"].user
 
         if obj.user1 and obj.user1 != current_user:
             partner = obj.user1
@@ -62,19 +83,19 @@ class PairsSerializer(serializers.ModelSerializer):
         #     partner = obj.user3
 
         partner_data = {
-            'id': partner.id,
-            'first_name': partner.first_name,
-            'last_name': partner.last_name,
-            'email': partner.email,
+            "id": partner.id,
+            "first_name": partner.first_name,
+            "last_name": partner.last_name,
+            "email": partner.email,
             "tg_link": partner.tg_link,
-            'hobby': HobbySerializer(partner.hobby.all(), many=True).data
+            "hobby": HobbySerializer(partner.hobby.all(), many=True).data,
         }
 
         return partner_data
 
     class Meta:
         model = PairsModel
-        fields = ['id', 'partner', 'created_at']
+        fields = ["id", "partner", "created_at"]
 
 
 class HobbySerializer(serializers.ModelSerializer):
@@ -84,7 +105,4 @@ class HobbySerializer(serializers.ModelSerializer):
 
 
 class HobbyUpdateSerializer(serializers.Serializer):
-    hobby = serializers.ListField(
-        child=serializers.IntegerField(),
-        required=True
-    )
+    hobby = serializers.ListField(child=serializers.IntegerField(), required=True)
