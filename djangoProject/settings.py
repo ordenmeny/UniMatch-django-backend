@@ -170,11 +170,16 @@ DJOSER = {
     "SERIALIZERS": {
         "user": "users.serializers.UserSerializer",
         "current_user": "users.serializers.UserSerializer",
-        # ??
         "token_create": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
     },
     "LOGIN_FIELD": "email",
     "TOKEN_MODEL": None,
+
+    # PASSWORD_RESET_CONFIRM_URL - шаблон ссылки, которую получит пользователь:
+    "PASSWORD_RESET_CONFIRM_URL": "password/reset/confirm/{uid}/{token}",
+    "PASSWORD_RESET_SHOW_EMAIL_NOT_FOUND": True,
+    "DOMAIN": "unimatch.ru",
+    'SITE_NAME': 'unimatch.ru',
 }
 
 SIMPLE_JWT = {
@@ -238,3 +243,12 @@ else:
 # CSRF_COOKIE_SAMESITE = "None"
 # CSRF_COOKIE_SECURE = True
 
+
+# Email
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.timeweb.ru"
+EMAIL_PORT = 465
+EMAIL_USE_SSL = True
+EMAIL_HOST_USER = "support@unimatch.ru"
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

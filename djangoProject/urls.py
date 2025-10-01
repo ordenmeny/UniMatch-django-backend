@@ -9,6 +9,8 @@ from rest_framework_simplejwt.views import (
     TokenBlacklistView
 )
 
+# from djoser.serializers import SendEmailResetSerializer
+
 # from .schema import schema_view
 from users.views import CustomTokenObtainPairView, CustomTokenBlacklistView
 
@@ -26,7 +28,11 @@ urlpatterns = [
     path('api/token/blacklist/', CustomTokenBlacklistView.as_view(), name='token_blacklist'),
 
     # Djoser
+    # POST /auth/users/reset_password/ — запросить сброс (отправляет письмо).
+    # POST /auth/users/reset_password_confirm/ — подтвердить и установить новый пароль.
     re_path(r'api/auth/', include('djoser.urls')),
+    path("auth/", include("djoser.urls.jwt")),
+
 
 ]
 
