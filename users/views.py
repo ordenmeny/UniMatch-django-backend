@@ -40,10 +40,21 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 import requests
 import logging
-
 from rest_framework_simplejwt.serializers import TokenBlacklistSerializer
+from djoser.email import PasswordResetEmail
 
 logger = logging.getLogger(__name__)
+
+
+class CustomPasswordResetEmail(PasswordResetEmail):
+    template_name = "users/custom_password_reset.html"
+
+    def get_context_data(self):
+        context = super().get_context_data()
+        context["domain"] = "unimatch.ru"
+        context["site_name"] = "unimatch.ru"
+        context["protocol"] = "https"
+        return context
 
 
 class CustomTokenBlacklistView(TokenBlacklistView):
@@ -441,13 +452,11 @@ class GeneratePairsAPIView(ListCreateAPIView):
 
 # Перед использованием:
 # Зайти в botfather, выбрать бота, отправить хост.
-# @method_decorator(csrf_exempt, name="dispatch")
 class TgAuthView(APIView):
     def post(self, request, *args, **kwargs):
         print("Start!")
         data = request.data
         print(data)
-
 
         if not check_telegram_auth(data, settings.TELEGRAM_BOT_TOKEN):
             return Response(
@@ -465,7 +474,6 @@ class TgAuthView(APIView):
             refresh_token = RefreshToken.for_user(exists_user.first())
             access_token = refresh_token.access_token
             return Response({"access": str(access_token)}, status=status.HTTP_200_OK)
-
 
         if username:
             new_user = get_user_model().objects.create(

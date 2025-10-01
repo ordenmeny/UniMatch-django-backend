@@ -13,12 +13,11 @@ SECRET_KEY = os.getenv("SECRET_KEY", "abcdef")
 yandex_client_id = os.getenv("YANDEX_CLIENT_ID")
 yandex_client_secret = os.getenv("YANDEX_CLIENT_SECRET")
 
-# Например, unimatch.ru
 frontend_host = os.getenv("FRONTEND_HOST")
 
 DEBUG = str_to_bool(os.getenv("DEBUG", "True"))
 
-TELEGRAM_BOT_TOKEN = "7852631020:AAHgv8NsR3YwunNgCSnYK_SQZhSZxbZLuPE"
+TELEGRAM_BOT_TOKEN = os.getenv("TG_TOKEN")
 
 ALLOWED_HOSTS = ["*"]
 
@@ -172,10 +171,11 @@ DJOSER = {
         "current_user": "users.serializers.UserSerializer",
         "token_create": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
     },
+    "EMAIL": {
+        "password_reset": "users.views.CustomPasswordResetEmail",
+    },
     "LOGIN_FIELD": "email",
     "TOKEN_MODEL": None,
-
-    # PASSWORD_RESET_CONFIRM_URL - шаблон ссылки, которую получит пользователь:
     "PASSWORD_RESET_CONFIRM_URL": "password/reset/confirm/{uid}/{token}",
     "PASSWORD_RESET_SHOW_EMAIL_NOT_FOUND": True,
     "DOMAIN": "unimatch.ru",
@@ -183,8 +183,8 @@ DJOSER = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,  # выдается новый refresh-токен
     "BLACKLIST_AFTER_ROTATION": True,  # старый refresh-токен автоматически добавляется в blacklist и больше не работает
     "UPDATE_LAST_LOGIN": False,

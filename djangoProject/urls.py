@@ -26,14 +26,13 @@ urlpatterns = [
     # path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('api/token/blacklist/', CustomTokenBlacklistView.as_view(), name='token_blacklist'),
+    # path('api/auth/users/reset/password/', CustomPasswordResetView.as_view(), name='password_reset'),
 
     # Djoser
     # POST /auth/users/reset_password/ — запросить сброс (отправляет письмо).
     # POST /auth/users/reset_password_confirm/ — подтвердить и установить новый пароль.
     re_path(r'api/auth/', include('djoser.urls')),
     path("auth/", include("djoser.urls.jwt")),
-
-
 ]
 
 if settings.DEBUG:
