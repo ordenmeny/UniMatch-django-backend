@@ -7,8 +7,9 @@ uv run manage.py makemigrations
 uv run manage.py migrate
 uv run manage.py collectstatic --noinput
 
-uv run celery -A users.celery worker --loglevel=info > /var/log/celery_worker.log 2>&1 &
-uv run celery -A users.celery beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler > /var/log/celery_beat.log 2>&1 &
+uv run celery -A users.celery worker --loglevel=info --logfile=/var/log/celery_worker.log &
+uv run celery -A users.celery beat --loglevel=info --logfile=/var/log/celery_beat.log --scheduler django_celery_beat.schedulers:DatabaseScheduler &
+
 
 exec uwsgi \
   --chdir /djangoapp \
