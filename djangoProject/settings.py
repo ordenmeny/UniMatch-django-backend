@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "django_celery_results",  # для хранения результатов выполнения задач Celery в базе данных
     "django_celery_beat",  # для планирования задач Celery
-
 ]
 
 MIDDLEWARE = [
@@ -52,10 +51,9 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "users.middleware.SuppressBrowserAuthMiddleware",
-    # 'users.middleware.TokenRefreshMiddleware',
 ]
 
-ROOT_URLCONF = 'djangoProject.urls'
+ROOT_URLCONF = "djangoProject.urls"
 
 TEMPLATES = [
     {
@@ -87,14 +85,14 @@ if str_to_bool(os.getenv("DOCKER_PROJECT")):
             "NAME": os.getenv("DB_NAME"),
             "USER": os.getenv("DB_USER"),
             "PASSWORD": os.getenv("DB_PASS"),
-            "PORT": "5432"
+            "PORT": "5432",
         }
     }
 else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            'NAME': BASE_DIR / 'db.sqlite3',
+            "NAME": BASE_DIR / "db.sqlite3",
         }
     }
 
@@ -177,14 +175,14 @@ DJOSER = {
     },
     "LOGIN_FIELD": "email",
     "TOKEN_MODEL": None,
-    "PASSWORD_RESET_CONFIRM_URL": "password/reset/confirm/{uid}/{token}",
+    "PASSWORD_RESET_CONFIRM_URL": "password-reset/{uid}/{token}",
     "PASSWORD_RESET_SHOW_EMAIL_NOT_FOUND": True,
     "DOMAIN": "unimatch.ru",
-    'SITE_NAME': 'unimatch.ru',
+    "SITE_NAME": "unimatch.ru",
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=5),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,  # выдается новый refresh-токен
     "BLACKLIST_AFTER_ROTATION": True,  # старый refresh-токен автоматически добавляется в blacklist и больше не работает
@@ -221,16 +219,12 @@ SIMPLE_JWT = {
 
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    frontend_host
-]
+CORS_ALLOWED_ORIGINS = [frontend_host]
 
 CORS_ALLOW_ALL_ORIGINS = True
 
 # === CSRF ===
-CSRF_TRUSTED_ORIGINS = [
-    frontend_host
-]
+CSRF_TRUSTED_ORIGINS = [frontend_host]
 
 
 if str_to_bool(os.getenv("DOCKER_PROJECT")):

@@ -657,6 +657,7 @@ class RefreshTokenView(APIView):
         logger.warning(f"Refresh_token: {refresh_token}")
 
         if refresh_token is None:
+            logger.warning("Необходимо пройти авторизацию")
             return Response(
                 {
                     # редирект с frontend на страницу авторизации.
@@ -670,6 +671,7 @@ class RefreshTokenView(APIView):
         try:
             serializer.is_valid(raise_exception=True)
         except TokenError as e:
+            logger.warning("Необходимо пройти авторизацию 2")
             return Response(
                 {
                     "error": "Необходимо пройти авторизацию",
@@ -681,6 +683,7 @@ class RefreshTokenView(APIView):
         new_refresh = serializer.validated_data.get("refresh")
 
         logger.warning(f"Access: {access}")
+        logger.warning(f"New refresh: {new_refresh}")
         response = Response({"access": access}, status=status.HTTP_200_OK)
         if new_refresh:
             response.set_cookie(
