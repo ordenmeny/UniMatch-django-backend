@@ -654,6 +654,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class RefreshTokenView(APIView):
     def post(self, request, *args, **kwargs):
         refresh_token = request.COOKIES.get("refresh_token")
+        logger.warning(f"Refresh_token: {refresh_token}")
 
         if refresh_token is None:
             return Response(
@@ -679,6 +680,7 @@ class RefreshTokenView(APIView):
         access = serializer.validated_data.get("access")
         new_refresh = serializer.validated_data.get("refresh")
 
+        logger.warning(f"Access: {access}")
         response = Response({"access": access}, status=status.HTTP_200_OK)
         if new_refresh:
             response.set_cookie(
