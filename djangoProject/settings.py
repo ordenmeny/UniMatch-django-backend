@@ -183,7 +183,7 @@ DJOSER = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=5),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,  # выдается новый refresh-токен
     "BLACKLIST_AFTER_ROTATION": True,  # старый refresh-токен автоматически добавляется в blacklist и больше не работает
