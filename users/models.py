@@ -32,7 +32,7 @@ class CustomUser(AbstractUser):
     REQUIRED_FIELDS = ['username']  # Поля, которые обязательны при создании суперпользователя.
 
     def __str__(self):
-        return f'{self.username}'
+        return f'{self.first_name} {self.last_name}'
 
     def has_common_hobby(self, other_user):
         """Проверяет наличие общих хобби с другим пользователем"""
