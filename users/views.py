@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.mail.message import EmailMultiAlternatives
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views import View
 from rest_framework.generics import (
@@ -42,8 +43,40 @@ import requests
 import logging
 from rest_framework_simplejwt.serializers import TokenBlacklistSerializer
 from djoser.email import PasswordResetEmail
+from django.core.mail import send_mail
 
 logger = logging.getLogger(__name__)
+
+
+class SendEmailApiView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, *args, **kwargs):
+        subject = request.data.get('subject')
+        html_message = request.data.get('html_message')
+
+        if not (html_message and subject):
+            return Response({'message': 'No message'}, status=status.HTTP_400_BAD_REQUEST)
+
+        emails = get_user_model().objects.all().values_list('email', flat=True)
+        log_count = 0
+        for email in emails:
+            try:
+                msg = EmailMultiAlternatives(
+                    subject=subject,
+                    # body=text_message,
+                    from_email=settings.EMAIL_HOST_USER,
+                    to=[email]
+                )
+                msg.attach_alternative(html_message, "text/html")
+                msg.send()
+                log_count += 1
+
+            except Exception as e:
+                logger.error(f"Не получилось отправить письмо для {email}")
+                return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({'SEND_COUNT': str(log_count)}, status=status.HTTP_200_OK)
 
 
 class CustomPasswordResetEmail(PasswordResetEmail):

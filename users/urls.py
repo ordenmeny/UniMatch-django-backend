@@ -21,6 +21,7 @@ urlpatterns = [
     path("api/auth/get_yandex_auth_url/", YandexAuthUrl.as_view()),
     path("auth/yandex/verification_code/", YandexAuth.as_view()),
     path("api/access/httponly/", GetAccessTokenHttponly.as_view()),
+    path("api/send/emails/", SendEmailApiView.as_view()),
     # not api
     path("tg-btn-auth/", TemplateView.as_view(template_name="users/tg_auth.html")),
 ]
