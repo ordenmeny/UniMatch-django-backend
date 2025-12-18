@@ -1,38 +1,11 @@
 from django.contrib import admin
-from django.urls import path, include, re_path
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-    TokenVerifyView,
-    TokenBlacklistView
-)
-
-# from djoser.serializers import SendEmailResetSerializer
-
-# from .schema import schema_view
-from users.views import CustomTokenObtainPairView, CustomTokenBlacklistView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('users.urls')),
-
-    # path('swagger/', schema_view.with_ui('swagger', cache_timeout=0),
-    #      name='schema-swagger-ui'),
-    # Simple JWT
-    # path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/', CustomTokenObtainPairView.as_view(), name='login_token_custom'),
-    # path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
-    path('api/token/blacklist/', CustomTokenBlacklistView.as_view(), name='token_blacklist'),
-    # path('api/auth/users/reset/password/', CustomPasswordResetView.as_view(), name='password_reset'),
-
-    # Djoser
-    # POST /auth/users/reset_password/ — запросить сброс (отправляет письмо).
-    # POST /auth/users/reset_password_confirm/ — подтвердить и установить новый пароль.
-    re_path(r'api/auth/', include('djoser.urls')),
-    path("auth/", include("djoser.urls.jwt")),
 ]
 
 if settings.DEBUG:

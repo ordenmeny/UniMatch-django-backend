@@ -1,52 +1,63 @@
+import logging
+from datetime import datetime, timedelta, time
+
+import requests
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail.message import EmailMultiAlternatives
-from django.http import HttpResponse, HttpResponseBadRequest
-from django.views import View
-from rest_framework.generics import (
-    RetrieveAPIView,
-    DestroyAPIView,
-    UpdateAPIView,
-    RetrieveUpdateDestroyAPIView,
-    CreateAPIView,
-    ListCreateAPIView,
-    ListAPIView,
-)
-from django.shortcuts import redirect
-from django.http import HttpResponseRedirect, HttpResponsePermanentRedirect
-from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
-
-from djangoProject import settings
-from .serializers import *
-from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
-from rest_framework.views import APIView
-import uuid
-from rest_framework.response import Response
-from rest_framework.authtoken.models import Token
-from rest_framework.exceptions import NotFound
-from rest_framework import status
-from django.views.generic import TemplateView, ListView
-from .models import *
-from users.utils.generate_pairs import generate_weekly_pairs
-from users.utils.check_sign import check_telegram_auth
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from datetime import datetime, timedelta, time
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from rest_framework.exceptions import ValidationError
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenBlacklistView
-)
-from rest_framework.exceptions import AuthenticationFailed
-from rest_framework_simplejwt.serializers import TokenRefreshSerializer
-import requests
-import logging
-from rest_framework_simplejwt.serializers import TokenBlacklistSerializer
-from djoser.email import PasswordResetEmail
-from django.core.mail import send_mail
-from .algorithm import PairingAlgorithm
 from django.db.models import Q
+from django.http import HttpResponseRedirect
 
+from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.generics import (
+    CreateAPIView,
+    ListAPIView,
+    ListCreateAPIView,
+    RetrieveAPIView,
+    RetrieveUpdateDestroyAPIView,
+    UpdateAPIView,
+)
+from rest_framework.permissions import (
+    AllowAny,
+    IsAdminUser,
+    IsAuthenticated
+)
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.serializers import (
+    TokenBlacklistSerializer,
+    TokenRefreshSerializer,
+)
+from rest_framework_simplejwt.tokens import (
+    AccessToken,
+    RefreshToken
+)
+from rest_framework_simplejwt.views import (
+    TokenBlacklistView,
+    TokenObtainPairView,
+)
+from rest_framework import status
+
+from djoser.email import PasswordResetEmail
+
+from .algorithm import PairingAlgorithm
+from .models import (
+    CustomUser,
+    PairsModel,
+    HobbyModel,
+)
+from .serializers import (
+    EmailTokenObtainPairSerializer,
+    UserSerializer,
+    PairsSerializer,
+    HobbySerializer,
+    HobbyUpdateSerializer,
+)
+from users.utils.check_sign import check_telegram_auth
+from users.utils.generate_pairs import generate_weekly_pairs
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +67,6 @@ class AdminApiViewCreatePairs(APIView):
 
     def post(self, request, *args, **kwargs):
         users = get_user_model().objects.filter(is_active_pair=True)
-        # history = PairsModel.objects.filter(is_archived=True)
         history = PairsModel.objects.all()
         history.update(is_archived=True)
 
@@ -116,7 +126,6 @@ class SendEmailApiView(APIView):
             try:
                 msg = EmailMultiAlternatives(
                     subject=subject,
-                    # body=text_message,
                     from_email=settings.EMAIL_HOST_USER,
                     to=[email]
                 )
@@ -185,9 +194,6 @@ class GetAccessTokenHttponly(APIView):
 
         try:
             access_token = AccessToken(cookies_access_token)
-            # user_id = access_token.get('user_id')
-            # user = get_user_model().objects.get(pk=user_id)
-            # serializer = UserSerializer(user)
 
             return Response({"access": str(access_token)}, status=status.HTTP_200_OK)
 
@@ -208,15 +214,18 @@ class YandexAuthUrl(APIView):
         return Response({"auth_url": link})
 
 
-# ! Обязательно поменять Redirect URI в настройках яндекс oauth: https://oauth.yandex.ru
 class YandexAuth(APIView):
+    """
+    Поменять Redirect URI в настройках яндекс oauth: https://oauth.yandex.ru !
+
+    Обмен кода подтверждения на OAuth-токен:
+    яндекс OAuth возвращает
+    OAuth-токен (access_token), refresh-токен и время их жизни в JSON-формате.
+    Проверка на работоспособность сервера яндекса.
+    """
+
     def get(self, request):
         code = request.GET.get('code')
-
-        # Обмен кода подтверждения на OAuth-токен:
-        # яндекс OAuth возвращает
-        # OAuth-токен (access_token), refresh-токен и время их жизни в JSON-формате.
-        # Проверка на работоспособность сервера яндекса.
         try:
             tokens_response = requests.post(
                 "https://oauth.yandex.ru/token",
@@ -236,7 +245,6 @@ class YandexAuth(APIView):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
 
-        # Если пришел ответ от яндекса, но статус не 200
         if tokens_response.status_code != 200:
             logger.warning(
                 f"Не удалось получить токен пользователя яндекса: {tokens_response.text}"
@@ -250,7 +258,6 @@ class YandexAuth(APIView):
 
         tokens_data = tokens_response.json()
         access_token = tokens_data.get("access_token")
-        # refresh_token = tokens_data.get("refresh_token")
 
         if not access_token:
             logger.error(f"В ответе Яндекса нет access_token")
@@ -332,7 +339,6 @@ class YandexAuth(APIView):
                 yandex_oauth=True,
                 first_name=user_data_response.get("first_name"),
                 last_name=user_data_response.get("last_name"),
-                # image=....
             )
 
         refresh_token = RefreshToken.for_user(user_by_yandex_email)
@@ -445,19 +451,7 @@ class RegisterUserAPIView(CreateAPIView):
         return response
 
 
-class CurrentPairAPIView(APIView):
-    serializer_class = UserSerializer
-
-    # Получение пары текущего пользователя
-    def get(self, request, *args, **kwargs):
-        user = self.request.user
-
-        cur_pair = PairsModel.objects.filter(is_archived=False).filter(
-            models.Q(user1=user) | models.Q(user2=user)
-        )
-
-
-class GeneratePairsAPIView(ListCreateAPIView):
+class AllPairsAPIView(ListCreateAPIView):
     serializer_class = PairsSerializer
     permission_classes = [IsAuthenticated]
 
@@ -465,13 +459,13 @@ class GeneratePairsAPIView(ListCreateAPIView):
         user = self.request.user
         pairs = (
             PairsModel.objects.filter(is_archived=True)
-            .filter(models.Q(user1=user) | models.Q(user2=user))
+            .filter(Q(user1=user) | Q(user2=user))
             .order_by("-created_at")
         )
 
         cur_pair = (
             PairsModel.objects.filter(is_archived=False)
-            .filter(models.Q(user1=user) | models.Q(user2=user))
+            .filter(Q(user1=user) | Q(user2=user))
             .order_by("-created_at")
             .first()
         )
@@ -491,64 +485,21 @@ class GeneratePairsAPIView(ListCreateAPIView):
             }
         )
 
-    def post(self, request, *args, **kwargs):
-        all_pairs = PairsModel.objects.all()
 
-        # Изменяем у всех объектов на is_archived=True.
-        PairsModel.objects.all().update(is_archived=True)
-
-        # Генерируем пары. Получаем список из пар (pairs).
-        all_users = CustomUser.objects.all()
-        # if (len(all_users)-1) % 2 == 0:
-        #     # Если количество пользователей четное без спец.пользователя reserve-user,
-        #     # то этого пользователя не учитываем
-
-        past_pairs = set()
-        for pair in PairsModel.objects.filter(is_archived=True):
-            users = [u for u in [pair.user1, pair.user2] if u is not None]
-            past_pairs.add(frozenset(users))
-
-        pairs = generate_weekly_pairs(all_users, past_pairs)
-
-        # Поочередно через цикл добавляем пары в БД (модель PairsModel) is_archived=False.
-        for i in pairs:
-            if len(i) == 2:
-                PairsModel.objects.create(user1=i[0], user2=i[1], is_archived=False)
-            elif len(i) == 3:
-                PairsModel.objects.create(
-                    user1=i[0], user2=i[1], is_archived=False
-                )
-
-        # [(<CustomUser: user6>, <CustomUser: user9>), (<CustomUser: admin>, <CustomUser: user7>, <CustomUser: user8>)]
-
-        formatted_pairs = []
-        for pair in pairs:
-            if len(pair) == 2:
-                formatted_pairs.append(
-                    [pair[0].id, pair[1].id],
-                )
-            elif len(pair) == 3:
-                formatted_pairs.append(
-                    [pair[0].id, pair[1].id, pair[2].id],
-                )
-
-        return Response({"pairs": formatted_pairs}, status=status.HTTP_201_CREATED)
-
-
-# Перед использованием:
-# Зайти в botfather, выбрать бота, отправить хост.
 class TgAuthView(APIView):
+    """
+    Перед использованием зайти в botfather, выбрать бота, отправить хост.
+    """
+
     def post(self, request, *args, **kwargs):
-        print("Start!")
         data = request.data
-        print(data)
 
         if not check_telegram_auth(data, settings.TELEGRAM_BOT_TOKEN):
             return Response(
                 {"error": "Invalid tg auth"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        chat_id = data.get("id")  # Всегда приходит
+        chat_id = data.get("id")
         username = data.get('username')
         first_name = data.get("first_name")
         last_name = data.get("last_name")
@@ -653,7 +604,7 @@ class DaysToMatch(APIView):
         day_of_week_match = 0
 
         # Время мэтча
-        match_time = time(10, 0)  # 10:00 утра
+        match_time = time(18, 0)
 
         # Сколько дней до следующего мэтча
         days_ahead = (day_of_week_match - now.weekday()) % 7
